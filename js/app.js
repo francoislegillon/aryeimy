@@ -1,13 +1,13 @@
 // Entry point for the AR QR Gallery experience.
 // Handles capability detection, slug routing, and manifest loading before AR boot logic is added.
 
-import { detectSupport, waitForAPNGSupport } from './support.js';
-import { getSlugFromPath } from './router.js';
-import { fetchManifest, ManifestError } from './manifest.js';
-import { preloadAssets } from './preload.js';
-import { buildOverlays, setOverlayVisibility } from './overlays.js';
+import { detectSupport, waitForAPNGSupport } from "./support.js";
+import { getSlugFromPath } from "./router.js";
+import { fetchManifest, ManifestError } from "./manifest.js";
+import { preloadAssets } from "./preload.js";
+import { buildOverlays, setOverlayVisibility } from "./overlays.js";
 
-const STATUS_TONES = ['info', 'error', 'success', 'loading'];
+const STATUS_TONES = ["info", "error", "success", "loading"];
 
 const state = {
   support: null,
@@ -19,23 +19,23 @@ const state = {
   overlayPlanes: [],
   overlayEntries: [],
   trackingLossTimer: null,
-  warnings: []
+  warnings: [],
 };
 
 const instructionsState = {
   container: null,
   text: null,
   link: null,
-  defaultText: ''
+  defaultText: "",
 };
 
 const appBaseUrl =
-  typeof window !== 'undefined'
+  typeof window !== "undefined"
     ? (() => {
         try {
-          return new URL('./', window.location.href).toString();
+          return new URL("./", window.location.href).toString();
         } catch (error) {
-          console.warn('[app] Failed to determine app base URL', error);
+          console.warn("[app] Failed to determine app base URL", error);
           return window.location.href;
         }
       })()
@@ -47,7 +47,7 @@ const preloaderEls = {
   container: null,
   bar: null,
   fill: null,
-  detail: null
+  detail: null,
 };
 
 export async function init() {
@@ -87,14 +87,14 @@ async function resolveSlugAndManifest() {
 
   if (!state.slug) {
     setStatus(
-      'info',
-      'Device ready. Append “/ar/<slug>” to load an artwork.',
-      'Tip: try /ar/demo while developing locally.'
+      "info",
+      "Device ready. Append “/ar/<slug>” to load an artwork.",
+      "Tip: try /ar/demo while developing locally."
     );
     return;
   }
 
-  setStatus('loading', `Loading artwork manifest for “${state.slug}”…`);
+  setStatus("loading", `Loading artwork manifest for “${state.slug}”…`);
 
   try {
     const manifest = await fetchManifest(state.slug);
@@ -117,54 +117,63 @@ async function resolveSlugAndManifest() {
 }
 
 function ensureCanonicalUrl(slug) {
-  if (!slug || typeof history.replaceState !== 'function') {
+  if (!slug || typeof history.replaceState !== "function") {
     return;
   }
 
   const { pathname, search, hash } = window.location;
-  const pathSegments = pathname.split('/');
-  const arIndex = pathSegments.findIndex((segment) => segment === 'ar');
+  const pathSegments = pathname.split("/");
+  const arIndex = pathSegments.findIndex((segment) => segment === "ar");
   let baseSegments;
 
   if (arIndex !== -1) {
     baseSegments = pathSegments.slice(0, arIndex + 1);
   } else {
     baseSegments = pathSegments.slice();
-    while (baseSegments.length > 1 && baseSegments[baseSegments.length - 1] === '') {
+    while (
+      baseSegments.length > 1 &&
+      baseSegments[baseSegments.length - 1] === ""
+    ) {
       baseSegments.pop();
     }
-    baseSegments.push('ar');
+    baseSegments.push("ar");
   }
 
   const normalizedBaseSegments = baseSegments.filter(
     (segment, index) => index === 0 || segment
   );
 
-  if (normalizedBaseSegments.length === 0 || normalizedBaseSegments[0] !== '') {
-    normalizedBaseSegments.unshift('');
+  if (normalizedBaseSegments.length === 0 || normalizedBaseSegments[0] !== "") {
+    normalizedBaseSegments.unshift("");
   }
 
-  const canonicalSegments = [...normalizedBaseSegments, encodeURIComponent(slug), ''];
-  const canonicalPath = canonicalSegments.join('/');
+  const canonicalSegments = [
+    ...normalizedBaseSegments,
+    encodeURIComponent(slug),
+    "",
+  ];
+  const canonicalPath = canonicalSegments.join("/");
 
-  const params = new URLSearchParams(search || '');
-  const hasSlugParam = params.has('slug');
-  params.delete('slug');
+  const params = new URLSearchParams(search || "");
+  const hasSlugParam = params.has("slug");
+  params.delete("slug");
   const nextSearch = params.toString();
-  const nextUrl = `${canonicalPath}${nextSearch ? `?${nextSearch}` : ''}${hash || ''}`;
+  const nextUrl = `${canonicalPath}${nextSearch ? `?${nextSearch}` : ""}${
+    hash || ""
+  }`;
 
   if (pathname === canonicalPath && !hasSlugParam) {
     return;
   }
 
-  history.replaceState(null, '', nextUrl);
+  history.replaceState(null, "", nextUrl);
 }
 
 function readSupportOverrides() {
   const params = new URLSearchParams(window.location.search);
-  const force = params.get('forceUnsupported');
+  const force = params.get("forceUnsupported");
   return {
-    forceUnsupported: force === '1' || force === 'true'
+    forceUnsupported: force === "1" || force === "true",
   };
 }
 
@@ -172,28 +181,30 @@ function evaluateSupport(flags, overrides) {
   const reasons = [];
 
   if (overrides.forceUnsupported) {
-    reasons.push('Forced unsupported mode (testing override).');
+    reasons.push("Forced unsupported mode (testing override).");
   } else {
     if (flags.isIOS) {
       const version = flags.iOSVersion ?? 0;
       if (version < 15) {
-        reasons.push('iOS 15 or newer is required for WebAR camera access.');
+        reasons.push("iOS 15 or newer is required for WebAR camera access.");
       }
     }
 
     if (flags.isAndroid) {
       const version = flags.androidVersion ?? 0;
       if (version && version < 9) {
-        reasons.push('Android 9 (Pie) or newer is required for WebAR.');
+        reasons.push("Android 9 (Pie) or newer is required for WebAR.");
       }
     }
 
     if (!flags.hasWebGL) {
-      reasons.push('WebGL support is required to render augmented overlays.');
+      reasons.push("WebGL support is required to render augmented overlays.");
     }
 
     if (!flags.hasCamera) {
-      reasons.push('A compatible rear camera is required to start the AR experience.');
+      reasons.push(
+        "A compatible rear camera is required to start the AR experience."
+      );
     }
   }
 
@@ -201,17 +212,17 @@ function evaluateSupport(flags, overrides) {
     supported: reasons.length === 0,
     reasons,
     flags,
-    overrides
+    overrides,
   };
 }
 
 function applySupportClasses(isSupported) {
   const body = document.body;
-  body.classList.toggle('supported', isSupported);
-  body.classList.toggle('unsupported', !isSupported);
+  body.classList.toggle("supported", isSupported);
+  body.classList.toggle("unsupported", !isSupported);
   const flags = state.support;
   body.setAttribute(
-    'data-support-flags',
+    "data-support-flags",
     JSON.stringify({
       isIOS: flags.isIOS,
       iOSVersion: flags.iOSVersion,
@@ -219,7 +230,7 @@ function applySupportClasses(isSupported) {
       androidVersion: flags.androidVersion,
       hasWebGL: flags.hasWebGL,
       hasCamera: flags.hasCamera,
-      supportsAPNG: flags.supportsAPNG
+      supportsAPNG: flags.supportsAPNG,
     })
   );
 }
@@ -227,19 +238,19 @@ function applySupportClasses(isSupported) {
 function renderStatus(evaluation) {
   if (evaluation.supported) {
     setStatus(
-      'info',
-      'Device ready. Load an artwork QR slug to launch the augmented experience.'
+      "info",
+      "Device ready. Load an artwork QR slug to launch the augmented experience."
     );
   } else {
     setStatus(
-      'error',
-      'This device cannot run the full augmented reality view yet. See guidance below.'
+      "error",
+      "This device cannot run the full augmented reality view yet. See guidance below."
     );
   }
 }
 
-function setStatus(tone, message, detail = '') {
-  const statusEl = document.querySelector('.status');
+function setStatus(tone, message, detail = "") {
+  const statusEl = document.querySelector(".status");
   if (!statusEl) return;
 
   STATUS_TONES.forEach((name) => statusEl.classList.remove(`status--${name}`));
@@ -247,56 +258,56 @@ function setStatus(tone, message, detail = '') {
     statusEl.classList.add(`status--${tone}`);
   }
 
-  const messageEl = document.getElementById('statusMessage');
+  const messageEl = document.getElementById("statusMessage");
   if (messageEl) {
     messageEl.textContent = message;
   }
 
-  const detailEl = document.getElementById('statusDetail');
+  const detailEl = document.getElementById("statusDetail");
   if (detailEl) {
     if (detail) {
       detailEl.textContent = detail;
-      detailEl.removeAttribute('hidden');
+      detailEl.removeAttribute("hidden");
     } else {
-      detailEl.textContent = '';
-      detailEl.setAttribute('hidden', '');
+      detailEl.textContent = "";
+      detailEl.setAttribute("hidden", "");
     }
   }
 }
 
 function renderFallback(evaluation) {
-  const fallbackEl = document.getElementById('fallback');
+  const fallbackEl = document.getElementById("fallback");
   if (!fallbackEl) return;
 
   if (evaluation.supported) {
-    fallbackEl.setAttribute('hidden', '');
-    const list = fallbackEl.querySelector('#fallbackReasons');
-    if (list) list.innerHTML = '';
+    fallbackEl.setAttribute("hidden", "");
+    const list = fallbackEl.querySelector("#fallbackReasons");
+    if (list) list.innerHTML = "";
     return;
   }
 
-  fallbackEl.removeAttribute('hidden');
-  const description = document.getElementById('fallbackDescription');
+  fallbackEl.removeAttribute("hidden");
+  const description = document.getElementById("fallbackDescription");
   if (description) {
     if (evaluation.overrides.forceUnsupported) {
       description.textContent =
-        'Fallback view enabled manually for debugging. Replace the query parameter to return to normal mode.';
+        "Fallback view enabled manually for debugging. Replace the query parameter to return to normal mode.";
     } else {
       description.textContent =
-        'Your browser doesn\'t support the full augmented reality experience yet. Watch the short demo below and try again on a compatible device.';
+        "Your browser doesn't support the full augmented reality experience yet. Watch the short demo below and try again on a compatible device.";
     }
   }
 
-  const list = fallbackEl.querySelector('#fallbackReasons');
+  const list = fallbackEl.querySelector("#fallbackReasons");
   if (list) {
-    list.innerHTML = '';
+    list.innerHTML = "";
     if (evaluation.reasons.length === 0) {
-      const li = document.createElement('li');
-      li.textContent = 'Unknown capability issue prevented the AR experience.';
+      const li = document.createElement("li");
+      li.textContent = "Unknown capability issue prevented the AR experience.";
       list.appendChild(li);
     } else {
       evaluation.reasons.forEach((reason) => {
-        const li = document.createElement('li');
+        const li = document.createElement("li");
         li.textContent = reason;
         list.appendChild(li);
       });
@@ -305,14 +316,14 @@ function renderFallback(evaluation) {
 }
 
 function handleManifestError(error) {
-  console.error('[app] Manifest load failed', error);
+  console.error("[app] Manifest load failed", error);
   hidePreloader();
   state.arStarted = false;
   clearTrackingLossTip();
   clearWarnings();
   updateFooterLink(null);
   updateFallbackVideo(null);
-  let detail = 'Unexpected error while loading the artwork manifest.';
+  let detail = "Unexpected error while loading the artwork manifest.";
   if (error instanceof ManifestError) {
     detail = error.message;
   }
@@ -322,16 +333,15 @@ function handleManifestError(error) {
   if (error instanceof ManifestError && error.status === 404) {
     showManifestNotFound(state.slug);
     setStatus(
-      'error',
-      'Artwork not found.',
+      "error",
+      "Artwork not found.",
       `We couldn’t locate an artwork called “${state.slug}”. Check the QR code or try again later.`
     );
   } else {
     hideErrorView();
-    setStatus('error', 'Unable to load artwork manifest.', detail);
+    setStatus("error", "Unable to load artwork manifest.", detail);
   }
 }
-
 
 async function preloadForManifest(manifest) {
   const supportsAPNG = await waitForAPNGSupport();
@@ -339,36 +349,36 @@ async function preloadForManifest(manifest) {
   applySupportClasses(state.evaluation.supported);
   showPreloader();
   setStatus(
-    'loading',
+    "loading",
     `Preloading assets for “${manifest.title}”…`,
-    'Ensuring all overlays are ready before activating the camera.'
+    "Ensuring all overlays are ready before activating the camera."
   );
   try {
     const resources = await preloadAssets(manifest, {
       supportsAPNG,
-      onProgress: handlePreloaderProgress
+      onProgress: handlePreloaderProgress,
     });
     state.preload = resources;
     exposeDebugState();
     handlePreloadWarnings(resources);
     hidePreloader();
     setStatus(
-      'loading',
+      "loading",
       `Assets ready for “${manifest.title}”.`,
-      'Initializing camera…'
+      "Initializing camera…"
     );
   } catch (error) {
-    console.error('[app] Preload failed', error);
+    console.error("[app] Preload failed", error);
     state.preload = null;
     state.arStarted = false;
     state.overlayPlanes = [];
     state.overlayEntries = [];
     exposeDebugState();
-    markPreloaderError(error.message || 'Unknown preload error.');
+    markPreloaderError(error.message || "Unknown preload error.");
     setStatus(
-      'error',
-      'Failed to preload AR assets.',
-      error.message || 'Unknown preload error.'
+      "error",
+      "Failed to preload AR assets.",
+      error.message || "Unknown preload error."
     );
   }
 }
@@ -377,11 +387,11 @@ async function startARScene() {
   if (!state.manifest || !state.preload || state.arStarted) {
     return;
   }
-  const container = document.getElementById('arShell');
-  const sceneEl = container ? container.querySelector('a-scene') : null;
-  const targetRoot = document.getElementById('targetRoot');
+  const container = document.getElementById("arShell");
+  const sceneEl = container ? container.querySelector("a-scene") : null;
+  const targetRoot = document.getElementById("targetRoot");
   if (!container || !sceneEl || !targetRoot) {
-    console.warn('[app] Missing AR scene container elements.');
+    console.warn("[app] Missing AR scene container elements.");
     return;
   }
 
@@ -390,15 +400,15 @@ async function startARScene() {
   let containerVisible = false;
   const showContainer = () => {
     if (!containerVisible) {
-      container.removeAttribute('hidden');
-      container.classList.add('ar-shell--active');
+      container.removeAttribute("hidden");
+      container.classList.add("ar-shell--active");
       containerVisible = true;
     }
   };
   const hideContainer = () => {
     if (containerVisible) {
-      container.setAttribute('hidden', '');
-      container.classList.remove('ar-shell--active');
+      container.setAttribute("hidden", "");
+      container.classList.remove("ar-shell--active");
       containerVisible = false;
     }
   };
@@ -409,12 +419,17 @@ async function startARScene() {
     await waitForSceneReady(sceneEl);
 
     const targetUrl = state.preload.target.url;
-    sceneEl.setAttribute('mindar-image', `autoStart: true; imageTargetSrc: ${targetUrl}`);
-    targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
+    sceneEl.setAttribute(
+      "mindar-image",
+      `autoStart: true; imageTargetSrc: ${targetUrl}`
+    );
+    targetRoot.setAttribute("mindar-image-target", "targetIndex: 0");
     setInstructionsDefault();
     clearTrackingLossTip();
 
-    const overlayResources = Array.isArray(state.preload.overlays) ? state.preload.overlays : [];
+    const overlayResources = Array.isArray(state.preload.overlays)
+      ? state.preload.overlays
+      : [];
     if (overlayResources.length) {
       const entries = buildOverlays(overlayResources);
       const planes = entries.map((entry) => entry.plane);
@@ -435,22 +450,22 @@ async function startARScene() {
       exposeDebugState();
       setInstructionsDefault();
       setStatus(
-        'success',
+        "success",
         `Camera active for “${state.manifest.title}”.`,
-        'Point the device at the artwork to begin tracking.'
+        "Point the device at the artwork to begin tracking."
       );
     } catch (error) {
-      console.error('[app] Failed to start AR scene', error);
+      console.error("[app] Failed to start AR scene", error);
       state.arStarted = false;
       exposeDebugState();
       hideContainer();
-      markPreloaderError('Camera initialization failed.');
+      markPreloaderError("Camera initialization failed.");
       const handled = handleCameraError(error);
       if (!handled) {
         setStatus(
-          'error',
-          'Unable to start the AR camera.',
-          error.message || 'Check camera permissions and reload the page.'
+          "error",
+          "Unable to start the AR camera.",
+          error.message || "Check camera permissions and reload the page."
         );
       }
     }
@@ -461,25 +476,29 @@ async function startARScene() {
 }
 
 async function startMindARScene(sceneEl) {
-  const system = sceneEl.systems ? sceneEl.systems['mindar-image-system'] : null;
-  if (system && typeof system.start === 'function') {
+  const system = sceneEl.systems
+    ? sceneEl.systems["mindar-image-system"]
+    : null;
+  if (system && typeof system.start === "function") {
     await system.start();
     return;
   }
 
-  let component = sceneEl.components ? sceneEl.components['mindar-image'] : null;
+  let component = sceneEl.components
+    ? sceneEl.components["mindar-image"]
+    : null;
   if (!component) {
-    component = await waitForComponent(sceneEl, 'mindar-image');
+    component = await waitForComponent(sceneEl, "mindar-image");
   }
-  if (component && typeof component.play === 'function') {
+  if (component && typeof component.play === "function") {
     const result = component.play();
-    if (result && typeof result.then === 'function') {
+    if (result && typeof result.then === "function") {
       await result;
     }
     return;
   }
 
-  const event = new CustomEvent('mindar-start');
+  const event = new CustomEvent("mindar-start");
   sceneEl.dispatchEvent(event);
 }
 
@@ -495,12 +514,12 @@ async function waitForComponent(sceneEl, name, retries = 5) {
 }
 
 function setupTrackingEvents(targetRoot) {
-  if (!targetRoot || targetRoot.dataset.trackingBound === 'true') {
+  if (!targetRoot || targetRoot.dataset.trackingBound === "true") {
     return;
   }
-  targetRoot.dataset.trackingBound = 'true';
-  targetRoot.addEventListener('targetFound', handleTargetFound);
-  targetRoot.addEventListener('targetLost', handleTargetLost);
+  targetRoot.dataset.trackingBound = "true";
+  targetRoot.addEventListener("targetFound", handleTargetFound);
+  targetRoot.addEventListener("targetLost", handleTargetLost);
 }
 
 function updateOverlayVisibility(visible) {
@@ -520,28 +539,28 @@ function handleTargetLost() {
 
 function handlePreloaderProgress(event) {
   const { status, total, completed, label, attempt } = event;
-  if (status === 'start') {
+  if (status === "start") {
     updatePreloaderDetail(`Loading ${label}…`);
     return;
   }
 
-  if (status === 'retry') {
+  if (status === "retry") {
     updatePreloaderDetail(`Retrying ${label} (attempt ${attempt})…`);
     return;
   }
 
-  if (status === 'loaded') {
+  if (status === "loaded") {
     const percent = total ? Math.round((completed / total) * 100) : 100;
     updatePreloaderBar(percent);
     if (completed >= total) {
-      updatePreloaderDetail('All assets loaded.');
+      updatePreloaderDetail("All assets loaded.");
     } else {
       updatePreloaderDetail(`Loaded ${label}. (${completed}/${total})`);
     }
     return;
   }
 
-  if (status === 'failed') {
+  if (status === "failed") {
     updatePreloaderBar(100);
     updatePreloaderDetail(`Failed to load ${label}.`);
   }
@@ -549,10 +568,10 @@ function handlePreloaderProgress(event) {
 
 function getPreloaderElements() {
   if (!preloaderEls.container) {
-    preloaderEls.container = document.getElementById('preloader');
-    preloaderEls.bar = document.getElementById('preloaderBar');
-    preloaderEls.fill = document.getElementById('preloaderBarFill');
-    preloaderEls.detail = document.getElementById('preloaderDetail');
+    preloaderEls.container = document.getElementById("preloader");
+    preloaderEls.bar = document.getElementById("preloaderBar");
+    preloaderEls.fill = document.getElementById("preloaderBarFill");
+    preloaderEls.detail = document.getElementById("preloaderDetail");
   }
   return preloaderEls;
 }
@@ -560,27 +579,27 @@ function getPreloaderElements() {
 function showPreloader() {
   const { container, fill, bar, detail } = getPreloaderElements();
   if (!container) return;
-  container.classList.remove('preloader--error');
-  container.removeAttribute('hidden');
-  if (fill) fill.style.width = '0%';
-  if (bar) bar.setAttribute('aria-valuenow', '0');
-  if (detail) detail.textContent = 'Starting asset downloads…';
+  container.classList.remove("preloader--error");
+  container.removeAttribute("hidden");
+  if (fill) fill.style.width = "0%";
+  if (bar) bar.setAttribute("aria-valuenow", "0");
+  if (detail) detail.textContent = "Starting asset downloads…";
 }
 
 function hidePreloader() {
   const { container } = getPreloaderElements();
   if (container) {
-    container.setAttribute('hidden', '');
+    container.setAttribute("hidden", "");
   }
 }
 
 function markPreloaderError(message) {
   const { container, detail, fill, bar } = getPreloaderElements();
   if (!container) return;
-  container.classList.add('preloader--error');
-  container.removeAttribute('hidden');
-  if (fill) fill.style.width = '100%';
-  if (bar) bar.setAttribute('aria-valuenow', '100');
+  container.classList.add("preloader--error");
+  container.removeAttribute("hidden");
+  if (fill) fill.style.width = "100%";
+  if (bar) bar.setAttribute("aria-valuenow", "100");
   if (detail) detail.textContent = message;
 }
 
@@ -591,7 +610,7 @@ function updatePreloaderBar(percent) {
     fill.style.width = `${clamped}%`;
   }
   if (bar) {
-    bar.setAttribute('aria-valuenow', String(clamped));
+    bar.setAttribute("aria-valuenow", String(clamped));
   }
 }
 
@@ -608,7 +627,7 @@ function handlePreloadWarnings(resources) {
     ? resources.failedOverlays
     : [];
   failures.forEach((entry) => {
-    const id = entry?.overlay?.id || 'overlay';
+    const id = entry?.overlay?.id || "overlay";
     addWarning(`Overlay “${id}” is unavailable.`);
   });
 
@@ -623,7 +642,9 @@ function handlePreloadWarnings(resources) {
     const width = entry.dimensions?.width ?? 0;
     const height = entry.dimensions?.height ?? 0;
     console.warn(
-      `[preload] Overlay ${entry.overlay?.id || 'unknown'} exceeds recommended resolution (${width}x${height}).`
+      `[preload] Overlay ${
+        entry.overlay?.id || "unknown"
+      } exceeds recommended resolution (${width}x${height}).`
     );
   });
 
@@ -631,23 +652,26 @@ function handlePreloadWarnings(resources) {
   if (totalBytes > 12 * 1024 * 1024) {
     const mb = (totalBytes / (1024 * 1024)).toFixed(1);
     console.warn(`[preload] Asset budget exceeded: ${mb} MB loaded.`);
-    addWarning('Asset budget exceeded');
+    addWarning("Asset budget exceeded");
   }
 }
 
 function getInstructionsElements() {
   if (!instructionsState.container) {
-    const container = document.getElementById('arInstructions');
+    const container = document.getElementById("arInstructions");
     if (!container) {
       return instructionsState;
     }
     instructionsState.container = container;
-    instructionsState.text = container.querySelector('#arInstructionsText') || container;
-    instructionsState.link = container.querySelector('#arInstructionsLink');
+    instructionsState.text =
+      container.querySelector("#arInstructionsText") || container;
+    instructionsState.link = container.querySelector("#arInstructionsLink");
     const defaultText =
       container.dataset.defaultText ||
-      (instructionsState.text ? instructionsState.text.textContent.trim() : container.textContent.trim()) ||
-      '';
+      (instructionsState.text
+        ? instructionsState.text.textContent.trim()
+        : container.textContent.trim()) ||
+      "";
     instructionsState.defaultText = defaultText;
   }
   return instructionsState;
@@ -656,32 +680,36 @@ function getInstructionsElements() {
 function setInstructionsDefault() {
   const { container, text, link, defaultText } = getInstructionsElements();
   if (!container || !text) return;
-  text.textContent = defaultText || 'Point your camera at the artwork to begin.';
-  container.classList.remove('ar-shell__instructions--active');
+  text.textContent =
+    defaultText || "Point your camera at the artwork to begin.";
+  container.classList.remove("ar-shell__instructions--active");
   if (link) {
-    link.setAttribute('hidden', '');
-    link.removeAttribute('href');
+    link.setAttribute("hidden", "");
+    link.removeAttribute("href");
   }
 }
 
 function setInstructionsMessage(message, options = {}) {
   const { container, text, link } = getInstructionsElements();
-  if (!container || !text || typeof message !== 'string') return;
+  if (!container || !text || typeof message !== "string") return;
   text.textContent = message;
-  container.classList.toggle('ar-shell__instructions--active', !!options.active);
+  container.classList.toggle(
+    "ar-shell__instructions--active",
+    !!options.active
+  );
   if (link) {
     const linkOptions = options.link;
     if (linkOptions && linkOptions.href) {
-      link.textContent = linkOptions.text || 'Learn more';
+      link.textContent = linkOptions.text || "Learn more";
       link.href = linkOptions.href;
-      link.target = linkOptions.target || '_blank';
-      link.rel = linkOptions.rel || 'noopener noreferrer';
-      link.removeAttribute('hidden');
+      link.target = linkOptions.target || "_blank";
+      link.rel = linkOptions.rel || "noopener noreferrer";
+      link.removeAttribute("hidden");
     } else {
-      link.setAttribute('hidden', '');
-      link.removeAttribute('href');
-      link.removeAttribute('target');
-      link.removeAttribute('rel');
+      link.setAttribute("hidden", "");
+      link.removeAttribute("href");
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
     }
   }
 }
@@ -689,7 +717,8 @@ function setInstructionsMessage(message, options = {}) {
 function scheduleTrackingTip(delayMs = 2600) {
   clearTrackingLossTip();
   state.trackingLossTimer = window.setTimeout(() => {
-    const message = 'Move closer to the artwork or adjust the lighting to regain tracking.';
+    const message =
+      "Move closer to the artwork or adjust the lighting to regain tracking.";
     setInstructionsMessage(message, { active: true });
     state.trackingLossTimer = null;
   }, delayMs);
@@ -719,75 +748,76 @@ function addWarning(message) {
 }
 
 function renderWarnings() {
-  const container = document.getElementById('arWarnings');
+  const container = document.getElementById("arWarnings");
   if (!container) return;
-  container.innerHTML = '';
+  container.innerHTML = "";
   if (!state.warnings.length) {
-    container.setAttribute('hidden', '');
+    container.setAttribute("hidden", "");
     return;
   }
-  container.removeAttribute('hidden');
+  container.removeAttribute("hidden");
   state.warnings.forEach((warning) => {
-    const pill = document.createElement('span');
-    pill.className = 'ar-warning';
+    const pill = document.createElement("span");
+    pill.className = "ar-warning";
     pill.textContent = warning;
     container.appendChild(pill);
   });
 }
 
 function showManifestNotFound(slug) {
-  const view = document.getElementById('errorView');
+  const view = document.getElementById("errorView");
   if (!view) return;
-  const title = document.getElementById('errorTitle');
-  const description = document.getElementById('errorDescription');
+  const title = document.getElementById("errorTitle");
+  const description = document.getElementById("errorDescription");
   if (title) {
-    title.textContent = 'Artwork not found';
+    title.textContent = "Artwork not found";
   }
   if (description) {
     if (slug) {
       description.textContent = `We couldn’t find an artwork called “${slug}”. Double-check the QR code or contact the curator.`;
     } else {
-      description.textContent = 'We couldn’t find that artwork. Double-check the QR code or contact the curator.';
+      description.textContent =
+        "We couldn’t find that artwork. Double-check the QR code or contact the curator.";
     }
   }
-  view.removeAttribute('hidden');
+  view.removeAttribute("hidden");
 }
 
 function hideErrorView() {
-  const view = document.getElementById('errorView');
+  const view = document.getElementById("errorView");
   if (view) {
-    view.setAttribute('hidden', '');
+    view.setAttribute("hidden", "");
   }
 }
 
 function updateFooterLink(url) {
-  const footer = document.getElementById('arFooter');
-  const link = document.getElementById('aboutLink');
+  const footer = document.getElementById("arFooter");
+  const link = document.getElementById("aboutLink");
   if (!footer || !link) return;
   if (url) {
     link.href = url;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    footer.removeAttribute('hidden');
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    footer.removeAttribute("hidden");
   } else {
-    link.removeAttribute('href');
-    link.removeAttribute('target');
-    link.removeAttribute('rel');
-    footer.setAttribute('hidden', '');
+    link.removeAttribute("href");
+    link.removeAttribute("target");
+    link.removeAttribute("rel");
+    footer.setAttribute("hidden", "");
   }
 }
 
 function updateFallbackVideo(manifest) {
-  const container = document.querySelector('#fallback .fallback-video');
+  const container = document.querySelector("#fallback .fallback-video");
   if (!container) return;
-  const placeholder = container.querySelector('.fallback-video__placeholder');
-  const existingVideo = container.querySelector('video');
+  const placeholder = container.querySelector(".fallback-video__placeholder");
+  const existingVideo = container.querySelector("video");
   if (!manifest || !manifest.fallbackVideo) {
     if (existingVideo) {
       existingVideo.remove();
     }
     if (placeholder) {
-      placeholder.removeAttribute('hidden');
+      placeholder.removeAttribute("hidden");
     }
     return;
   }
@@ -797,54 +827,55 @@ function updateFallbackVideo(manifest) {
 
   let video = existingVideo;
   if (!video) {
-    video = document.createElement('video');
-    video.className = 'fallback-video__player';
+    video = document.createElement("video");
+    video.className = "fallback-video__player";
     video.playsInline = true;
-    video.setAttribute('playsinline', '');
+    video.setAttribute("playsinline", "");
     video.controls = true;
     video.loop = true;
-    video.setAttribute('loop', '');
+    video.setAttribute("loop", "");
     video.muted = true;
-    video.setAttribute('muted', '');
+    video.setAttribute("muted", "");
     container.appendChild(video);
   }
   video.src = url;
   video.load();
-  video.removeAttribute('hidden');
+  video.removeAttribute("hidden");
   if (placeholder) {
-    placeholder.setAttribute('hidden', '');
+    placeholder.setAttribute("hidden", "");
   }
 }
 
 function handleCameraError(error) {
-  const name = error?.name || '';
-  const message = error?.message || '';
-  const denied = /NotAllowedError|Permission|denied/i.test(name) || /denied/i.test(message);
+  const name = error?.name || "";
+  const message = error?.message || "";
+  const denied =
+    /NotAllowedError|Permission|denied/i.test(name) || /denied/i.test(message);
   if (!denied) {
     return false;
   }
 
   const fallbackUrl = resolveManifestAsset(state.manifest?.fallbackVideo);
   setStatus(
-    'error',
-    'Camera permission required.',
+    "error",
+    "Camera permission required.",
     fallbackUrl
-      ? 'Enable camera access in your browser settings or watch the fallback video instead.'
-      : 'Enable camera access in your browser settings and reload the page.'
+      ? "Enable camera access in your browser settings or watch the fallback video instead."
+      : "Enable camera access in your browser settings and reload the page."
   );
-  setInstructionsMessage('Camera access is required to view this experience.', {
+  setInstructionsMessage("Camera access is required to view this experience.", {
     active: true,
     link: fallbackUrl
       ? {
           href: fallbackUrl,
-          text: 'Watch the fallback video'
+          text: "Watch the fallback video",
         }
-      : null
+      : null,
   });
   if (fallbackUrl) {
-    addWarning('Camera access denied — showing fallback video link.');
+    addWarning("Camera access denied — showing fallback video link.");
   } else {
-    addWarning('Camera access denied.');
+    addWarning("Camera access denied.");
   }
   return true;
 }
@@ -854,19 +885,23 @@ function resolveManifestAsset(path) {
   try {
     return new URL(path, state.manifest.url || window.location.href).toString();
   } catch (error) {
-    console.warn('[app] Failed to resolve manifest asset URL', path, error);
+    console.warn("[app] Failed to resolve manifest asset URL", path, error);
     return path;
   }
 }
 
 async function ensureARLibsLoaded() {
-  if (window.AFRAME && window.AFRAME.components && window.AFRAME.components['mindar-image']) {
+  if (
+    window.AFRAME &&
+    window.AFRAME.components &&
+    window.AFRAME.components["mindar-image"]
+  ) {
     return;
   }
   if (!arLibsPromise) {
     arLibsPromise = (async () => {
-      const aframeUrl = resolveScriptUrl('./libs/aframe.min.js');
-      const mindarUrl = resolveScriptUrl('./libs/mindar-image-aframe.prod.js');
+      const aframeUrl = resolveScriptUrl("./libs/aframe.min.js");
+      const mindarUrl = resolveScriptUrl("./libs/mindar-image-aframe.prod.js");
       await loadScript(aframeUrl);
       await loadScript(mindarUrl);
     })();
@@ -880,23 +915,27 @@ function loadScript(src) {
       resolve();
       return;
     }
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
     script.defer = true;
     script.dataset.dynamicSrc = src;
-    script.addEventListener('load', () => resolve());
-    script.addEventListener('error', () => reject(new Error(`Failed to load script ${src}`)));
+    script.addEventListener("load", () => resolve());
+    script.addEventListener("error", () =>
+      reject(new Error(`Failed to load script ${src}`))
+    );
     document.head.appendChild(script);
   });
 }
 
 function resolveScriptUrl(path) {
   if (!path) return path;
-  const base = appBaseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
+  const base =
+    appBaseUrl ||
+    (typeof window !== "undefined" ? window.location.href : undefined);
   try {
     return base ? new URL(path, base).toString() : path;
   } catch (error) {
-    console.warn('[app] Failed to resolve script URL', path, error);
+    console.warn("[app] Failed to resolve script URL", path, error);
     return path;
   }
 }
@@ -905,16 +944,16 @@ async function waitForSceneReady(sceneEl) {
   if (!sceneEl) return;
   if (sceneEl.hasLoaded) return;
   await new Promise((resolve) => {
-    sceneEl.addEventListener('loaded', resolve, { once: true });
+    sceneEl.addEventListener("loaded", resolve, { once: true });
   });
 }
 
 function updateTitle(title) {
-  const appTitle = document.getElementById('appTitle');
+  const appTitle = document.getElementById("appTitle");
   if (appTitle) {
     appTitle.textContent = title;
   }
-  if (typeof document !== 'undefined') {
+  if (typeof document !== "undefined") {
     document.title = `${title} · AR QR Gallery`;
   }
 }
@@ -928,14 +967,16 @@ function exposeDebugState() {
     preload: state.preload,
     arStarted: state.arStarted,
     overlays: state.overlayEntries.map((entry) => entry.overlay.id),
-    warnings: [...state.warnings]
+    warnings: [...state.warnings],
   };
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    init().catch((error) => console.error('[app] Initialization failed', error));
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    init().catch((error) =>
+      console.error("[app] Initialization failed", error)
+    );
   });
 } else {
-  init().catch((error) => console.error('[app] Initialization failed', error));
+  init().catch((error) => console.error("[app] Initialization failed", error));
 }

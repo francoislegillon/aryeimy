@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR QR Gallery - Fixed</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <main class="page" role="main">
+      <section class="status" aria-live="polite">
+        <h1 id="appTitle">AR QR Gallery</h1>
+        <p class="lead" id="statusMessage">Starting AR experience...</p>
+      </section>
+      
+      <section id="arShell" class="ar-shell" aria-live="polite">
+        <div class="ar-shell__canvas">
+          <a-scene
+            embedded
+            mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; showStats: false;"
+            color-space="sRGB"
+            renderer="colorManagement: true; physicallyCorrectLights: true"
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false"
+            id="arScene"
+          >
+            <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
+              <!-- Simple test object to see when tracking works -->
+              <a-box position="0 0 0" color="red" scale="0.1 0.1 0.1"></a-box>
+            </a-entity>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+          </a-scene>
+        </div>
+        <div class="ar-shell__instructions" id="arInstructions">
+          <span class="ar-shell__instructions-text" id="arInstructionsText">
+            Point your camera at the artwork to begin.
+          </span>
+        </div>
+      </section>
+    </main>
+    
+    <script src="./libs/aframe.min.js"></script>
+    <script src="./libs/mindar-image-aframe.prod.js"></script>
+    <script>
+      // Simple initialization similar to minimal test
+      document.addEventListener('DOMContentLoaded', () => {
+        const statusMessage = document.getElementById('statusMessage');
+        const arShell = document.getElementById('arShell');
+        
+        function updateStatus(message) {
+          console.log('[AR] ' + message);
+          if (statusMessage) {
+            statusMessage.textContent = message;
+          }
+        }
+        
+        updateStatus('Libraries loading...');
+        
+        // Wait for A-Frame to be ready
+        if (window.AFRAME) {
+          updateStatus('A-Frame ready, initializing AR...');
+          initializeAR();
+        } else {
+          window.addEventListener('load', () => {
+            updateStatus('A-Frame ready, initializing AR...');
+            initializeAR();
+          });
+        }
+        
+        function initializeAR() {
+          const scene = document.getElementById('arScene');
+          if (!scene) {
+            updateStatus('Error: AR scene not found');
+            return;
+          }
+          
+          // Show AR view immediately
+          arShell.hidden = false;
+          
+          // Monitor AR events
+          scene.addEventListener('arReady', () => {
+            updateStatus('AR ready - camera active!');
+          });
+          
+          scene.addEventListener('arError', (e) => {
+            updateStatus('AR error: ' + JSON.stringify(e.detail));
+          });
+          
+          scene.addEventListener('targetFound', () => {
+            updateStatus('Target found! Look for the red box.');
+          });
+          
+          scene.addEventListener('targetLost', () => {
+            updateStatus('Target lost - point camera at artwork');
+          });
+          
+          updateStatus('AR scene initialized');
+        }
+        
+        // Error handling
+        window.addEventListener('error', (e) => {
+          updateStatus('Error: ' + e.message);
+        });
+      });
+    </script>
+  </body>
+</html>

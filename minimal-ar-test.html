@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Minimal AR Test</title>
+    <style>
+      body {
+        margin: 0;
+        background: #000;
+        font-family: Arial, sans-serif;
+      }
+      #info {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        z-index: 1000;
+        font-size: 12px;
+        max-width: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="info">Loading minimal AR test...</div>
+
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; showStats: false;"
+      color-space="sRGB"
+      renderer="colorManagement: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      embedded
+      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%"
+    >
+      <a-entity mindar-image-target="targetIndex: 0">
+        <a-plane
+          position="0 0 0"
+          rotation="-90 0 0"
+          width="0.3"
+          height="0.3"
+          color="red"
+          opacity="0.8"
+        ></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const info = document.getElementById("info");
+
+      function updateInfo(message) {
+        console.log(message);
+        info.innerHTML += "<br>" + message;
+        info.scrollTop = info.scrollHeight;
+      }
+
+      updateInfo("Starting minimal AR test...");
+
+      document.addEventListener("DOMContentLoaded", () => {
+        updateInfo("DOM loaded");
+
+        if (window.AFRAME) {
+          updateInfo("✓ A-Frame available: " + window.AFRAME.version);
+        } else {
+          updateInfo("✗ A-Frame not available");
+        }
+      });
+
+      window.addEventListener("load", () => {
+        updateInfo("Window loaded");
+
+        const scene = document.querySelector("a-scene");
+        if (scene) {
+          updateInfo("✓ Scene found");
+
+          scene.addEventListener("loaded", () => {
+            updateInfo("✓ Scene loaded");
+          });
+
+          scene.addEventListener("renderstart", () => {
+            updateInfo("✓ Rendering started");
+          });
+
+          scene.addEventListener("arReady", () => {
+            updateInfo("🎉 AR READY - Camera should be working!");
+          });
+
+          scene.addEventListener("arError", (e) => {
+            updateInfo("✗ AR Error: " + JSON.stringify(e.detail));
+          });
+
+          // Check for video element
+          let attempts = 0;
+          const checkVideo = setInterval(() => {
+            attempts++;
+            const video = document.querySelector("video");
+            if (video) {
+              updateInfo(
+                `✓ Video element found: ${video.videoWidth}x${video.videoHeight}`
+              );
+              if (video.videoWidth > 0) {
+                updateInfo("✓ Video has dimensions - camera working!");
+                clearInterval(checkVideo);
+              }
+            }
+
+            if (attempts > 10) {
+              updateInfo("⏰ Video check timeout");
+              clearInterval(checkVideo);
+            }
+          }, 1000);
+        } else {
+          updateInfo("✗ Scene not found");
+        }
+      });
+
+      // Catch any errors
+      window.addEventListener("error", (e) => {
+        updateInfo("✗ Error: " + e.message);
+      });
+    </script>
+  </body>
+</html>
