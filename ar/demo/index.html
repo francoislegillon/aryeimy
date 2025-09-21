@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Loading artwork…</title>
-    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="../../css/style.css" />
   </head>
   <body>
     <main class="page" role="main">
@@ -12,7 +12,7 @@
         <h1>AR QR Gallery</h1>
         <p class="lead">Preparing the augmented experience…</p>
         <p class="status__detail">
-          If you are not redirected automatically, <a href="/">open the gallery home.</a>
+          If you are not redirected automatically, <a href="../../" data-home-link>open the gallery home.</a>
         </p>
       </section>
     </main>
@@ -27,11 +27,26 @@
             return;
           }
 
+          var slugPathSegment = '/ar/' + slug;
+          var basePathIndex = path.indexOf(slugPathSegment);
+          var basePath = basePathIndex !== -1 ? path.slice(0, basePathIndex) : '/';
+          if (!basePath) {
+            basePath = '/';
+          }
+          if (basePath.charAt(basePath.length - 1) !== '/') {
+            basePath += '/';
+          }
+
           var params = new URLSearchParams(window.location.search || '');
           params.set('slug', slug);
           var query = params.toString();
           var hash = window.location.hash || '';
-          var destination = '/' + (query ? '?' + query : '');
+          var destination = basePath + (query ? '?' + query : '');
+
+          var homeLinks = document.querySelectorAll('[data-home-link]');
+          for (var index = 0; index < homeLinks.length; index++) {
+            homeLinks[index].setAttribute('href', basePath);
+          }
 
           if (destination + hash === window.location.pathname + window.location.search + window.location.hash) {
             return;
@@ -45,7 +60,7 @@
     </script>
     <noscript>
       <p>This page requires JavaScript to launch the AR experience.</p>
-      <p><a href="/">Open the gallery home</a>.</p>
+      <p><a href="../../">Open the gallery home</a>.</p>
     </noscript>
   </body>
 </html>
