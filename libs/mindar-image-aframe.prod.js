@@ -63,6 +63,15 @@
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
           video.srcObject = stream;
+          try {
+            await video.play();
+          } catch (playError) {
+            console.error('[MindAR:stub] Unable to start camera playback; falling back to placeholder frame.', playError);
+            if (stream && stream.getTracks){
+              stream.getTracks().forEach(track => track.stop());
+            }
+            this._usePlaceholderFrame();
+          }
         } catch (error) {
           console.warn('[MindAR:stub] Unable to access camera; falling back to placeholder frame.', error);
           this._usePlaceholderFrame();
