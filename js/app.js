@@ -461,14 +461,24 @@ async function startARScene() {
 }
 
 async function startMindARScene(sceneEl) {
+  const system = sceneEl.systems ? sceneEl.systems['mindar-image-system'] : null;
+  if (system && typeof system.start === 'function') {
+    await system.start();
+    return;
+  }
+
   let component = sceneEl.components ? sceneEl.components['mindar-image'] : null;
   if (!component) {
     component = await waitForComponent(sceneEl, 'mindar-image');
   }
   if (component && typeof component.play === 'function') {
-    await component.play();
+    const result = component.play();
+    if (result && typeof result.then === 'function') {
+      await result;
+    }
     return;
   }
+
   const event = new CustomEvent('mindar-start');
   sceneEl.dispatchEvent(event);
 }
