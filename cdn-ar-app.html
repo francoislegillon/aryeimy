@@ -15,7 +15,7 @@
         <h1 id="appTitle">AR QR Gallery</h1>
         <p class="lead" id="statusMessage">Starting AR experience...</p>
       </section>
-      
+
       <section id="arShell" class="ar-shell" aria-live="polite">
         <div class="ar-shell__canvas">
           <a-scene
@@ -31,7 +31,10 @@
               <!-- Simple test object to see when tracking works -->
               <a-box position="0 0 0" color="red" scale="0.1 0.1 0.1"></a-box>
             </a-entity>
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+            <a-camera
+              position="0 0 0"
+              look-controls="enabled: false"
+            ></a-camera>
           </a-scene>
         </div>
         <div class="ar-shell__instructions" id="arInstructions">
@@ -41,69 +44,69 @@
         </div>
       </section>
     </main>
-    
+
     <script>
       // Simple initialization
-      document.addEventListener('DOMContentLoaded', () => {
-        const statusMessage = document.getElementById('statusMessage');
-        const arShell = document.getElementById('arShell');
-        
+      document.addEventListener("DOMContentLoaded", () => {
+        const statusMessage = document.getElementById("statusMessage");
+        const arShell = document.getElementById("arShell");
+
         function updateStatus(message) {
-          console.log('[AR] ' + message);
+          console.log("[AR] " + message);
           if (statusMessage) {
             statusMessage.textContent = message;
           }
         }
-        
-        updateStatus('Checking A-Frame...');
-        
+
+        updateStatus("Checking A-Frame...");
+
         if (window.AFRAME) {
-          updateStatus('A-Frame loaded: ' + window.AFRAME.version);
+          updateStatus("A-Frame loaded: " + window.AFRAME.version);
           initializeAR();
         } else {
-          updateStatus('Waiting for A-Frame...');
-          window.addEventListener('load', () => {
+          updateStatus("Waiting for A-Frame...");
+          window.addEventListener("load", () => {
             if (window.AFRAME) {
-              updateStatus('A-Frame loaded: ' + window.AFRAME.version);
+              updateStatus("A-Frame loaded: " + window.AFRAME.version);
               initializeAR();
             } else {
-              updateStatus('ERROR: A-Frame failed to load');
+              updateStatus("ERROR: A-Frame failed to load");
             }
           });
         }
-        
+
         function initializeAR() {
-          const scene = document.getElementById('arScene');
+          const scene = document.getElementById("arScene");
           if (!scene) {
-            updateStatus('Error: AR scene not found');
+            updateStatus("Error: AR scene not found");
             return;
           }
-          
+
           // Show AR view immediately
           arShell.hidden = false;
-          updateStatus('AR scene initialized, starting camera...');
-          
+          updateStatus("AR scene initialized, starting camera...");
+
           // Monitor AR events
-          scene.addEventListener('arReady', () => {
-            updateStatus('🎉 AR ready - camera active!');
+          scene.addEventListener("arReady", () => {
+            updateStatus("🎉 AR ready - camera active!");
           });
-          
-          scene.addEventListener('arError', (e) => {
-            updateStatus('❌ AR error: ' + JSON.stringify(e.detail));
+
+          scene.addEventListener("arError", (e) => {
+            updateStatus("❌ AR error: " + JSON.stringify(e.detail));
           });
-          
-          scene.addEventListener('targetFound', () => {
-            updateStatus('🎯 Target found! Look for the red box.');
+
+          scene.addEventListener("targetFound", () => {
+            updateStatus("🎯 Target found! Look for the red box.");
           });
-          
-          scene.addEventListener('targetLost', () => {
-            updateStatus('Target lost - point camera at artwork');
+
+          scene.addEventListener("targetLost", () => {
+            updateStatus("Target lost - point camera at artwork");
           });
         }
-        
+
         // Error handling
-        window.addEventListener('error', (e) => {
-          updateStatus('💥 Error: ' + e.message);
+        window.addEventListener("error", (e) => {
+          updateStatus("💥 Error: " + e.message);
         });
       });
     </script>

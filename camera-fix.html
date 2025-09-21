@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Camera Fix</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      /* Force camera video to be visible */
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+      }
+
+      a-scene {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 1 !important;
+      }
+
+      /* Force all video elements to be visible */
+      video {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        z-index: 1 !important;
+        background: red !important; /* Debug: should see red if video not working */
+      }
+
+      /* Canvas should be on top for AR */
+      canvas {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 2 !important;
+        pointer-events: none !important;
+      }
+
+      #status {
+        position: fixed !important;
+        top: 10px !important;
+        right: 10px !important;
+        z-index: 1000 !important;
+        background: rgba(0, 0, 0, 0.8) !important;
+        color: white !important;
+        padding: 10px !important;
+        font-family: monospace !important;
+        font-size: 12px !important;
+        max-width: 200px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">Initializing camera...</div>
+
+    <a-scene
+      embedded
+      mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; showStats: false;"
+      color-space="sRGB"
+      renderer="colorManagement: true; physicallyCorrectLights: true"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      id="arScene"
+    >
+      <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
+        <a-box position="0 0 0" color="lime" scale="0.1 0.1 0.1"></a-box>
+      </a-entity>
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    </a-scene>
+
+    <script>
+      const status = document.getElementById("status");
+
+      function updateStatus(msg) {
+        console.log("[Camera Fix] " + msg);
+        status.innerHTML += "<br>" + msg;
+      }
+
+      updateStatus("Starting camera fix...");
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const scene = document.getElementById("arScene");
+
+        scene.addEventListener("arReady", () => {
+          updateStatus("✅ AR Ready!");
+
+          // Force all video elements to be visible
+          setTimeout(() => {
+            const videos = document.querySelectorAll("video");
+            updateStatus(`Found ${videos.length} video(s)`);
+
+            videos.forEach((video, i) => {
+              updateStatus(
+                `Video ${i}: ${video.videoWidth}x${video.videoHeight}`
+              );
+
+              // Force video properties
+              video.style.cssText = `
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+                z-index: 1 !important;
+                background: blue !important;
+              `;
+
+              // Try to play the video
+              video.play().catch((e) => {
+                updateStatus(`Video play error: ${e.message}`);
+              });
+            });
+
+            // Check canvas elements
+            const canvases = document.querySelectorAll("canvas");
+            updateStatus(`Found ${canvases.length} canvas(es)`);
+
+            canvases.forEach((canvas, i) => {
+              canvas.style.zIndex = "2";
+              canvas.style.pointerEvents = "none";
+            });
+          }, 2000);
+        });
+
+        scene.addEventListener("arError", (e) => {
+          updateStatus("❌ AR Error: " + e.message);
+        });
+      });
+    </script>
+  </body>
+</html>
