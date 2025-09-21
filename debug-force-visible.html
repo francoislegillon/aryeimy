@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Debug - Force Visible</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        .debug {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: Arial;
+            max-width: 300px;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 200, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: Arial;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug" id="debug">
+        AR Loading...<br>
+        Content: Preparing...<br>
+        Visibility: Testing...
+    </div>
+    
+    <div class="instructions">
+        Point camera at paramo - Look for GIANT objects
+    </div>
+    
+    <a-scene 
+        mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true">
+        
+        <a-light type="ambient" color="#ffffff" intensity="1.0"></a-light>
+        <a-light type="directional" position="0 1 1" color="#ffffff" intensity="1.0"></a-light>
+        
+        <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
+            
+            <!-- EXTREMELY VISIBLE CONTENT - impossible to miss -->
+            
+            <!-- HUGE red box at origin -->
+            <a-box 
+                id="box1"
+                position="0 0 0" 
+                scale="3 3 3" 
+                color="#ff0000" 
+                material="transparent: false; opacity: 1"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 2000">
+            </a-box>
+            
+            <!-- GIANT green text -->
+            <a-text 
+                id="text1"
+                value="🎯 HUGE AR!" 
+                position="0 4 0" 
+                align="center" 
+                color="#00ff00"
+                scale="5 5 5"
+                material="transparent: false">
+            </a-text>
+            
+            <!-- Blue box slightly forward -->
+            <a-box 
+                id="box2"
+                position="0 0 1" 
+                scale="2 2 2" 
+                color="#0000ff" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- Yellow cylinder below -->
+            <a-cylinder
+                id="cylinder1"
+                position="0 -3 0"
+                radius="2"
+                height="1"
+                color="#ffff00"
+                material="transparent: false">
+            </a-cylinder>
+            
+            <!-- Purple sphere moving -->
+            <a-sphere
+                id="sphere1"
+                position="5 2 0"
+                radius="1"
+                color="#ff00ff"
+                material="transparent: false"
+                animation="property: position; to: -5 2 0; dir: alternate; loop: true; dur: 3000">
+            </a-sphere>
+            
+            <!-- Orange cone behind -->
+            <a-cone
+                id="cone1"
+                position="0 -4 -1"
+                radius-bottom="3"
+                radius-top="0"
+                height="2"
+                color="#ff8800"
+                material="transparent: false">
+            </a-cone>
+            
+        </a-entity>
+        
+        <a-camera position="0 0 0"></a-camera>
+        
+    </a-scene>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const debug = document.getElementById('debug');
+            const targetEntity = document.querySelector('#targetRoot');
+            
+            debug.innerHTML = 'AR: Loading...<br>Content: 6 objects<br>Visibility: Testing...';
+            
+            // List all objects for debugging
+            const objects = ['box1', 'text1', 'box2', 'cylinder1', 'sphere1', 'cone1'];
+            
+            if (targetEntity) {
+                targetEntity.addEventListener('targetFound', function() {
+                    console.log('🎯 TARGET FOUND! Checking visibility...');
+                    
+                    let visibleCount = 0;
+                    objects.forEach(id => {
+                        const obj = document.getElementById(id);
+                        if (obj && obj.object3D.visible) {
+                            visibleCount++;
+                            console.log(`✅ ${id} is visible`);
+                        } else {
+                            console.log(`❌ ${id} is NOT visible`);
+                        }
+                    });
+                    
+                    debug.innerHTML = `🎯 DETECTED!<br>Objects: ${objects.length}<br>Visible: ${visibleCount}`;
+                    debug.style.background = 'rgba(0, 150, 0, 0.9)';
+                });
+                
+                targetEntity.addEventListener('targetLost', function() {
+                    console.log('❌ Target lost');
+                    debug.innerHTML = 'AR: Target lost<br>Content: Hidden<br>Visibility: Waiting...';
+                    debug.style.background = 'rgba(150, 0, 0, 0.9)';
+                });
+            }
+            
+            // Check if objects are created
+            setTimeout(() => {
+                const createdCount = objects.filter(id => document.getElementById(id)).length;
+                console.log(`📦 Created ${createdCount}/${objects.length} objects`);
+                
+                objects.forEach(id => {
+                    const obj = document.getElementById(id);
+                    if (obj) {
+                        const pos = obj.getAttribute('position');
+                        const scale = obj.getAttribute('scale');
+                        const color = obj.getAttribute('color');
+                        console.log(`📦 ${id}: pos(${pos.x},${pos.y},${pos.z}) scale(${scale.x}) color(${color})`);
+                    }
+                });
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
