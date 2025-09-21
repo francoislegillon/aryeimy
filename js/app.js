@@ -386,54 +386,77 @@ async function startARScene() {
   }
 
   await ensureARLibsLoaded();
-  await waitForSceneReady(sceneEl);
 
-  const targetUrl = state.preload.target.url;
-  sceneEl.setAttribute('mindar-image', `autoStart: false; imageTargetSrc: ${targetUrl}`);
-  targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
-  container.removeAttribute('hidden');
-  container.classList.add('ar-shell--active');
-  setInstructionsDefault();
-  clearTrackingLossTip();
+  let containerVisible = false;
+  const showContainer = () => {
+    if (!containerVisible) {
+      container.removeAttribute('hidden');
+      container.classList.add('ar-shell--active');
+      containerVisible = true;
+    }
+  };
+  const hideContainer = () => {
+    if (containerVisible) {
+      container.setAttribute('hidden', '');
+      container.classList.remove('ar-shell--active');
+      containerVisible = false;
+    }
+  };
 
-  const overlayResources = Array.isArray(state.preload.overlays) ? state.preload.overlays : [];
-  if (overlayResources.length) {
-    const entries = buildOverlays(overlayResources);
-    const planes = entries.map((entry) => entry.plane);
-    targetRoot.replaceChildren(...planes);
-    state.overlayEntries = entries;
-    state.overlayPlanes = planes;
-    planes.forEach((plane) => setOverlayVisibility(plane, false));
-  } else {
-    targetRoot.replaceChildren();
-    state.overlayEntries = [];
-    state.overlayPlanes = [];
-  }
-  setupTrackingEvents(targetRoot);
+  showContainer();
 
   try {
-    await startMindARScene(sceneEl);
-    state.arStarted = true;
-    exposeDebugState();
+    await waitForSceneReady(sceneEl);
+
+    const targetUrl = state.preload.target.url;
+    sceneEl.setAttribute('mindar-image', `autoStart: false; imageTargetSrc: ${targetUrl}`);
+    targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
     setInstructionsDefault();
-    setStatus(
-      'success',
-      `Camera active for “${state.manifest.title}”.`,
-      'Point the device at the artwork to begin tracking.'
-    );
-  } catch (error) {
-    console.error('[app] Failed to start AR scene', error);
-    state.arStarted = false;
-    exposeDebugState();
-    markPreloaderError('Camera initialization failed.');
-    const handled = handleCameraError(error);
-    if (!handled) {
-      setStatus(
-        'error',
-        'Unable to start the AR camera.',
-        error.message || 'Check camera permissions and reload the page.'
-      );
+    clearTrackingLossTip();
+
+    const overlayResources = Array.isArray(state.preload.overlays) ? state.preload.overlays : [];
+    if (overlayResources.length) {
+      const entries = buildOverlays(overlayResources);
+      const planes = entries.map((entry) => entry.plane);
+      targetRoot.replaceChildren(...planes);
+      state.overlayEntries = entries;
+      state.overlayPlanes = planes;
+      planes.forEach((plane) => setOverlayVisibility(plane, false));
+    } else {
+      targetRoot.replaceChildren();
+      state.overlayEntries = [];
+      state.overlayPlanes = [];
     }
+    setupTrackingEvents(targetRoot);
+
+    try {
+      await startMindARScene(sceneEl);
+      state.arStarted = true;
+      exposeDebugState();
+      setInstructionsDefault();
+      setStatus(
+        'success',
+        `Camera active for “${state.manifest.title}”.`,
+        'Point the device at the artwork to begin tracking.'
+      );
+    } catch (error) {
+      console.error('[app] Failed to start AR scene', error);
+      state.arStarted = false;
+      exposeDebugState();
+      hideContainer();
+      markPreloaderError('Camera initialization failed.');
+      const handled = handleCameraError(error);
+      if (!handled) {
+        setStatus(
+          'error',
+          'Unable to start the AR camera.',
+          error.message || 'Check camera permissions and reload the page.'
+        );
+      }
+    }
+  } catch (error) {
+    hideContainer();
+    throw error;
   }
 }
 
