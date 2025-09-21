@@ -409,7 +409,7 @@ async function startARScene() {
     await waitForSceneReady(sceneEl);
 
     const targetUrl = state.preload.target.url;
-    sceneEl.setAttribute('mindar-image', `autoStart: false; imageTargetSrc: ${targetUrl}`);
+    sceneEl.setAttribute('mindar-image', `autoStart: true; imageTargetSrc: ${targetUrl}`);
     targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
     setInstructionsDefault();
     clearTrackingLossTip();
