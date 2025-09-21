@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Position Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+        }
+        
+        /* Force video element visibility for camera feed */
+        video {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+            z-index: 1 !important;
+        }
+        
+        /* Ensure A-Frame canvas is above video */
+        a-scene {
+            z-index: 2 !important;
+            position: relative !important;
+        }
+        
+        .debug-status {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 10;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 100, 200, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 10;
+            text-align: center;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-status" id="debugStatus">
+        🎯 Tracking: Waiting...<br>
+        📦 AR Entities: Loading...<br>
+        👁️ Camera: Starting...<br>
+        📏 Scale Test: Ready
+    </div>
+    
+    <div class="instructions" id="instructions">
+        Point at paramo image - Multiple test objects at different positions
+    </div>
+    
+    <a-scene 
+        embedded 
+        mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
+        color-space="sRGB"
+        renderer="colorManagement: true; physicallyCorrectLights: true"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false">
+        
+        <!-- Add some ambient light -->
+        <a-light type="ambient" color="#ffffff" intensity="0.5"></a-light>
+        <a-light type="directional" position="0 1 1" color="#ffffff" intensity="0.5"></a-light>
+        
+        <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
+            
+            <!-- Test objects at DIFFERENT distances from camera -->
+            
+            <!-- VERY CLOSE to camera (almost touching) -->
+            <a-box 
+                id="closeBox"
+                position="0 0 0.1" 
+                scale="0.1 0.1 0.1" 
+                color="#ff0000" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- MEDIUM distance -->
+            <a-box 
+                id="mediumBox"
+                position="0 0 0.5" 
+                scale="0.3 0.3 0.3" 
+                color="#00ff00" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- FAR distance -->
+            <a-box 
+                id="farBox"
+                position="0 0 1" 
+                scale="0.5 0.5 0.5" 
+                color="#0000ff" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- HUGE at medium distance -->
+            <a-box 
+                id="hugeBox"
+                position="1 0 0.5" 
+                scale="2 2 2" 
+                color="#ffff00" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- At negative Z (behind target) -->
+            <a-box 
+                id="behindBox"
+                position="0 0 -0.5" 
+                scale="1 1 1" 
+                color="#ff00ff" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- At different Y positions (above/below) -->
+            <a-box 
+                id="aboveBox"
+                position="0 1 0.5" 
+                scale="0.5 0.5 0.5" 
+                color="#00ffff" 
+                material="transparent: false">
+            </a-box>
+            
+            <a-box 
+                id="belowBox"
+                position="0 -1 0.5" 
+                scale="0.5 0.5 0.5" 
+                color="#ff8800" 
+                material="transparent: false">
+            </a-box>
+            
+            <!-- Text at different positions -->
+            <a-text 
+                value="CLOSE" 
+                position="0 0.2 0.2" 
+                align="center" 
+                color="#ffffff"
+                scale="0.5 0.5 0.5">
+            </a-text>
+            
+            <a-text 
+                value="MEDIUM" 
+                position="0 0.5 0.5" 
+                align="center" 
+                color="#ffffff"
+                scale="1 1 1">
+            </a-text>
+            
+            <a-text 
+                value="FAR" 
+                position="0 1 1" 
+                align="center" 
+                color="#ffffff"
+                scale="2 2 2">
+            </a-text>
+            
+        </a-entity>
+        
+        <a-camera 
+            position="0 0 0" 
+            look-controls="enabled: false">
+        </a-camera>
+    </a-scene>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const targetEntity = document.querySelector('#targetRoot');
+            const debugStatus = document.getElementById('debugStatus');
+            const instructions = document.getElementById('instructions');
+            
+            // List all the test boxes
+            const testBoxes = [
+                'closeBox', 'mediumBox', 'farBox', 'hugeBox', 
+                'behindBox', 'aboveBox', 'belowBox'
+            ];
+            
+            let isTracking = false;
+            
+            // Target tracking events
+            targetEntity.addEventListener('targetFound', function() {
+                console.log('🎯 TARGET FOUND!');
+                isTracking = true;
+                
+                debugStatus.innerHTML = `
+                    🎯 Tracking: ACTIVE<br>
+                    📦 AR Entities: ${testBoxes.length} boxes<br>
+                    👁️ Camera: Active<br>
+                    📏 Scale Test: Multiple distances
+                `;
+                debugStatus.style.background = 'rgba(0, 150, 0, 0.9)';
+                
+                instructions.innerHTML = 'TARGET DETECTED! Look for: RED(close), GREEN(med), BLUE(far), YELLOW(huge)';
+                instructions.style.background = 'rgba(0, 150, 0, 0.9)';
+                
+                // Log each box position
+                testBoxes.forEach(boxId => {
+                    const box = document.getElementById(boxId);
+                    if (box) {
+                        const pos = box.getAttribute('position');
+                        const scale = box.getAttribute('scale');
+                        const color = box.getAttribute('color');
+                        console.log(`📦 ${boxId}: pos=${pos.x},${pos.y},${pos.z} scale=${scale.x} color=${color}`);
+                    }
+                });
+            });
+            
+            targetEntity.addEventListener('targetLost', function() {
+                console.log('❌ Target lost');
+                isTracking = false;
+                
+                debugStatus.innerHTML = `
+                    🎯 Tracking: LOST<br>
+                    📦 AR Entities: Hidden<br>
+                    👁️ Camera: Active<br>
+                    📏 Scale Test: Waiting
+                `;
+                debugStatus.style.background = 'rgba(150, 0, 0, 0.9)';
+                
+                instructions.innerHTML = 'Point at paramo image - Multiple test objects at different positions';
+                instructions.style.background = 'rgba(0, 100, 200, 0.9)';
+            });
+        });
+    </script>
+</body>
+</html>
