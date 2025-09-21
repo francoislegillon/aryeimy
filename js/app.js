@@ -29,6 +29,18 @@ const instructionsState = {
   defaultText: ''
 };
 
+const appBaseUrl =
+  typeof window !== 'undefined'
+    ? (() => {
+        try {
+          return new URL('./', window.location.href).toString();
+        } catch (error) {
+          console.warn('[app] Failed to determine app base URL', error);
+          return window.location.href;
+        }
+      })()
+    : null;
+
 let arLibsPromise = null;
 
 const preloaderEls = {
@@ -820,8 +832,10 @@ async function ensureARLibsLoaded() {
   }
   if (!arLibsPromise) {
     arLibsPromise = (async () => {
-      await loadScript('/libs/aframe.min.js');
-      await loadScript('/libs/mindar-image-aframe.prod.js');
+      const aframeUrl = resolveScriptUrl('./libs/aframe.min.js');
+      const mindarUrl = resolveScriptUrl('./libs/mindar-image-aframe.prod.js');
+      await loadScript(aframeUrl);
+      await loadScript(mindarUrl);
     })();
   }
   await arLibsPromise;
@@ -841,6 +855,17 @@ function loadScript(src) {
     script.addEventListener('error', () => reject(new Error(`Failed to load script ${src}`)));
     document.head.appendChild(script);
   });
+}
+
+function resolveScriptUrl(path) {
+  if (!path) return path;
+  const base = appBaseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
+  try {
+    return base ? new URL(path, base).toString() : path;
+  } catch (error) {
+    console.warn('[app] Failed to resolve script URL', path, error);
+    return path;
+  }
 }
 
 async function waitForSceneReady(sceneEl) {
