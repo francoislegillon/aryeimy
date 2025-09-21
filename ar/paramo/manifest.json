@@ -1,0 +1,25 @@
+{
+  "title": "paramo",
+  "aboutLink": "https://yeimysanchez.com",
+  "target": "target.mind",
+  "overlays": [
+    {
+      "id": "layer-glow",
+      "url": {
+        "png": "assets/layer-fullart.png"
+      },
+      "zIndex": 1,
+      "position": [
+        0,
+        0.02,
+        0.01
+      ],
+      "scale": [
+        1.08,
+        1.08,
+        1
+      ],
+      "loop": true
+    }
+   ]
+}
