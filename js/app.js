@@ -110,7 +110,31 @@ function ensureCanonicalUrl(slug) {
   }
 
   const { pathname, search, hash } = window.location;
-  const canonicalPath = `/ar/${encodeURIComponent(slug)}/`;
+  const pathSegments = pathname.split('/');
+  const arIndex = pathSegments.findIndex((segment) => segment === 'ar');
+  let baseSegments;
+
+  if (arIndex !== -1) {
+    baseSegments = pathSegments.slice(0, arIndex + 1);
+  } else {
+    baseSegments = pathSegments.slice();
+    while (baseSegments.length > 1 && baseSegments[baseSegments.length - 1] === '') {
+      baseSegments.pop();
+    }
+    baseSegments.push('ar');
+  }
+
+  const normalizedBaseSegments = baseSegments.filter(
+    (segment, index) => index === 0 || segment
+  );
+
+  if (normalizedBaseSegments.length === 0 || normalizedBaseSegments[0] !== '') {
+    normalizedBaseSegments.unshift('');
+  }
+
+  const canonicalSegments = [...normalizedBaseSegments, encodeURIComponent(slug), ''];
+  const canonicalPath = canonicalSegments.join('/');
+
   const params = new URLSearchParams(search || '');
   const hasSlugParam = params.has('slug');
   params.delete('slug');
