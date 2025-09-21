@@ -17,6 +17,7 @@ Follow these steps when onboarding a new artwork into the AR QR gallery:
 
 4. **Create the slug folder**
    - Duplicate `/ar/demo/` (or an existing slug) to `/ar/<slug>/`.
+   - Keep the bundled `index.html` bootloader so scanners land on the SPA instead of a directory listing.
    - Replace the placeholder `target.mind` file and swap the SVG overlays in `/assets/` with your production exports.
 
 5. **Author `manifest.json`**
@@ -26,6 +27,7 @@ Follow these steps when onboarding a new artwork into the AR QR gallery:
 
 6. **Local verification**
    - Serve the repo locally, visit `/ar/<slug>`, and check for warning badges.
+   - Confirm the slug loads the AR shell immediately (no raw directory index) when hitting the URL directly or via QR scan.
    - Simulate lost tracking (move artwork out of frame) to ensure tips/warnings behave correctly.
 
 7. **Commit and deploy**

@@ -45,6 +45,7 @@ The repository avoids bundling large binaries by using small SVG overlays and te
 ## Repository layout
 
 - `/ar/<slug>/` – Artwork manifests, MindAR targets, overlays, and fallback videos.
+  - Each slug folder ships with an `index.html` bootloader that forwards to the main SPA.
 - `/css/` – Global styles for shell, preloader, overlays, and fallback copy.
 - `/js/` – Application modules (support detection, routing, manifest fetch, preloader, overlays, entry point).
 - `/libs/` – Vendored/stubbed A-Frame and MindAR builds for offline development.
@@ -86,8 +87,9 @@ libs/
    - Set `title`, `aboutLink`, and `fallbackVideo`.
    - Provide `position` and `scale` arrays for each overlay (MindAR units).
    - Adjust `zIndex` values for proper stacking order.
-5. Test locally on `/ar/<slug>` and confirm preloader warnings are clear.
-6. Commit the folder as part of the static site so GitHub Pages (or any static host) can serve it.
+5. Copy the bootloader entry page (`/ar/demo/index.html`) into the new slug so QR scans load the SPA instead of a directory listing.
+6. Test locally on `/ar/<slug>` and confirm preloader warnings are clear.
+7. Commit the folder as part of the static site so GitHub Pages (or any static host) can serve it.
 
 ## Deployment (GitHub Pages)
 

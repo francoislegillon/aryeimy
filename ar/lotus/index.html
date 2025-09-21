@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loading artwork…</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="page" role="main">
+      <section class="status status--loading" aria-live="polite">
+        <h1>AR QR Gallery</h1>
+        <p class="lead">Preparing the augmented experience…</p>
+        <p class="status__detail">
+          If you are not redirected automatically, <a href="/">open the gallery home.</a>
+        </p>
+      </section>
+    </main>
+    <script>
+      (function () {
+        try {
+          var path = window.location.pathname || '';
+          var segments = path.split('/').filter(Boolean);
+          var arIndex = segments.indexOf('ar');
+          var slug = arIndex !== -1 && segments[arIndex + 1] ? segments[arIndex + 1] : '';
+          if (!slug) {
+            return;
+          }
+
+          var params = new URLSearchParams(window.location.search || '');
+          params.set('slug', slug);
+          var query = params.toString();
+          var hash = window.location.hash || '';
+          var destination = '/' + (query ? '?' + query : '');
+
+          if (destination + hash === window.location.pathname + window.location.search + window.location.hash) {
+            return;
+          }
+
+          window.location.replace(destination + hash);
+        } catch (error) {
+          console.error('[bootloader] Failed to redirect to main SPA', error);
+        }
+      })();
+    </script>
+    <noscript>
+      <p>This page requires JavaScript to launch the AR experience.</p>
+      <p><a href="/">Open the gallery home</a>.</p>
+    </noscript>
+  </body>
+</html>
