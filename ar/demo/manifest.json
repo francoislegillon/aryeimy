@@ -1,0 +1,17 @@
+{
+  "title": "Demo Aurora",
+  "aboutLink": "https://example.com/artist",
+  "target": "target.mind",
+  "overlays": [
+    {
+      "id": "layer-01",
+      "url": {
+        "png": "assets/layer-01.svg"
+      },
+      "zIndex": 1,
+      "position": [0, 0, 0.01],
+      "scale": [1, 1, 1],
+      "loop": true
+    }
+  ]
+}
