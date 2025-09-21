@@ -43,6 +43,10 @@ export async function init() {
   const overrides = readSupportOverrides();
   state.evaluation = evaluateSupport(state.support, overrides);
 
+  const initialSlug = getSlugFromPath(window.location);
+  state.slug = initialSlug;
+  ensureCanonicalUrl(initialSlug);
+
   exposeDebugState();
   applySupportClasses(state.evaluation.supported);
   renderFallback(state.evaluation);
@@ -57,6 +61,7 @@ export async function init() {
 
 async function resolveSlugAndManifest() {
   state.slug = getSlugFromPath(window.location);
+  ensureCanonicalUrl(state.slug);
   state.preload = null;
   state.arStarted = false;
   state.overlayPlanes = [];
@@ -97,6 +102,26 @@ async function resolveSlugAndManifest() {
     state.manifest = null;
     exposeDebugState();
   }
+}
+
+function ensureCanonicalUrl(slug) {
+  if (!slug || typeof history.replaceState !== 'function') {
+    return;
+  }
+
+  const { pathname, search, hash } = window.location;
+  const canonicalPath = `/ar/${encodeURIComponent(slug)}/`;
+  const params = new URLSearchParams(search || '');
+  const hasSlugParam = params.has('slug');
+  params.delete('slug');
+  const nextSearch = params.toString();
+  const nextUrl = `${canonicalPath}${nextSearch ? `?${nextSearch}` : ''}${hash || ''}`;
+
+  if (pathname === canonicalPath && !hasSlugParam) {
+    return;
+  }
+
+  history.replaceState(null, '', nextUrl);
 }
 
 function readSupportOverrides() {
