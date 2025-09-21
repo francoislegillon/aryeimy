@@ -64,21 +64,35 @@
       this.sceneEl.appendChild(video);
       this.videoEl = video;
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+        let stream;
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-          video.srcObject = stream;
-          try {
-            await video.play();
-          } catch (playError) {
-            console.error('[MindAR:stub] Unable to start camera playback; falling back to placeholder frame.', playError);
-            if (stream && stream.getTracks){
-              stream.getTracks().forEach(track => track.stop());
-            }
-            this._usePlaceholderFrame();
-          }
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
         } catch (error) {
           console.warn('[MindAR:stub] Unable to access camera; falling back to placeholder frame.', error);
           this._usePlaceholderFrame();
+          return;
+        }
+        video.srcObject = stream;
+        let timeoutId;
+        try {
+          const playPromise = video.play();
+          await Promise.race([
+            playPromise ?? Promise.resolve(),
+            new Promise(resolve => video.addEventListener('playing', resolve, { once: true })),
+            new Promise(resolve => video.addEventListener('loadeddata', resolve, { once: true })),
+            new Promise((_, reject) => {
+              timeoutId = setTimeout(() => reject(new Error('Camera playback timed out')), 2500);
+            })
+          ]);
+        } catch (playError) {
+          console.error('[MindAR:stub] Unable to start camera playback; falling back to placeholder frame.', playError);
+          if (stream && stream.getTracks){
+            stream.getTracks().forEach(track => track.stop());
+          }
+          this._usePlaceholderFrame();
+          throw playError;
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
         }
       } else {
         this._usePlaceholderFrame();
