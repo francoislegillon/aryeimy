@@ -174,6 +174,7 @@ function ensureString(value) {
 
 function buildManifestUrl(slug) {
   const sanitized = encodeURIComponent(slug);
-  const relative = `./ar/${sanitized}/manifest.json`;
-  return new URL(relative, window.location.href).toString();
+  const relative = `ar/${sanitized}/manifest.json`;
+  const base = `${window.location.origin}/`;
+  return new URL(relative, base).toString();
 }
