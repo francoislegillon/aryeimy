@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR Loading Debug</title>
+    <style>
+      body {
+        font-family: system-ui;
+        margin: 20px;
+        background: #1a1a1a;
+        color: white;
+      }
+      .log {
+        background: #2a2a2a;
+        padding: 10px;
+        border-radius: 6px;
+        margin: 10px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+      button {
+        padding: 12px 24px;
+        margin: 10px;
+        background: #007acc;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      #arContainer {
+        width: 100%;
+        max-width: 400px;
+        aspect-ratio: 3/4;
+        background: #000;
+        border: 2px solid #333;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 20px 0;
+      }
+      a-scene {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 6px;
+        background: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AR Camera Loading Debug</h1>
+
+    <div class="status" id="status">Ready to test...</div>
+
+    <button onclick="startFullARTest()">Start Full AR Test</button>
+    <button onclick="testCameraOnly()">Test Camera Only</button>
+    <button onclick="clearLog()">Clear Log</button>
+
+    <div id="log" class="log">Debug log will appear here...</div>
+
+    <div id="arContainer">
+      <!-- A-Frame scene will be injected here -->
+    </div>
+
+    <script src="/libs/aframe.min.js"></script>
+    <script src="/libs/mindar-image-aframe.prod.js"></script>
+
+    <script>
+      const log = document.getElementById("log");
+      const status = document.getElementById("status");
+      const arContainer = document.getElementById("arContainer");
+
+      function addLog(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix =
+          type === "error" ? "❌" : type === "success" ? "✅" : "📋";
+        log.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+        console.log(`[${type}] ${message}`);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      function updateStatus(message) {
+        status.textContent = message;
+        addLog(`Status: ${message}`);
+      }
+
+      function clearLog() {
+        log.textContent = "";
+        updateStatus("Log cleared");
+      }
+
+      // Test camera access only
+      async function testCameraOnly() {
+        addLog("=== Testing Camera Access Only ===");
+        updateStatus("Testing camera...");
+
+        try {
+          if (!navigator.mediaDevices?.getUserMedia) {
+            addLog("getUserMedia not available", "error");
+            updateStatus("Camera API not available");
+            return;
+          }
+
+          addLog("Requesting camera permission...");
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+              width: { ideal: 640 },
+              height: { ideal: 480 },
+            },
+          });
+
+          addLog("Camera permission granted!", "success");
+          addLog(`Video tracks: ${stream.getVideoTracks().length}`);
+
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            const settings = track.getSettings();
+            addLog(`Camera resolution: ${settings.width}x${settings.height}`);
+            addLog(`Camera facing mode: ${settings.facingMode}`);
+          }
+
+          updateStatus("Camera working! Stopping stream...");
+
+          // Stop the stream after 2 seconds
+          setTimeout(() => {
+            stream.getTracks().forEach((track) => track.stop());
+            addLog("Camera stream stopped", "success");
+            updateStatus("Camera test completed");
+          }, 2000);
+        } catch (error) {
+          addLog(
+            `Camera access failed: ${error.name} - ${error.message}`,
+            "error"
+          );
+          updateStatus("Camera access failed");
+        }
+      }
+
+      // Full AR test
+      async function startFullARTest() {
+        addLog("=== Starting Full AR Test ===");
+        updateStatus("Initializing AR...");
+
+        try {
+          // Check libraries
+          if (!window.AFRAME) {
+            addLog("A-Frame not loaded", "error");
+            updateStatus("A-Frame missing");
+            return;
+          }
+          addLog("A-Frame loaded successfully", "success");
+
+          if (!AFRAME.components["mindar-image"]) {
+            addLog("MindAR component not found", "error");
+            updateStatus("MindAR missing");
+            return;
+          }
+          addLog("MindAR component found", "success");
+
+          // Create AR scene
+          addLog("Creating A-Frame scene...");
+          arContainer.innerHTML = `
+                    <a-scene
+                        embedded
+                        mindar-image="autoStart: false; imageTargetSrc: /ar/paramo/target.mind"
+                        vr-mode-ui="enabled: false"
+                        device-orientation-permission-ui="enabled: false"
+                        id="arScene"
+                    >
+                        <a-entity mindar-image-target="targetIndex: 0">
+                            <a-box position="0 0 0.1" material="color: red;" scale="0.1 0.1 0.1"></a-box>
+                        </a-entity>
+                        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+                    </a-scene>
+                `;
+
+          const scene = document.getElementById("arScene");
+          updateStatus("Scene created, waiting for load...");
+
+          // Set up event listeners
+          scene.addEventListener("loaded", () => {
+            addLog("A-Frame scene loaded", "success");
+            updateStatus("Scene loaded, starting MindAR...");
+            startMindAR();
+          });
+
+          scene.addEventListener("arReady", () => {
+            addLog("MindAR ready!", "success");
+            updateStatus("AR Ready - point camera at target");
+          });
+
+          scene.addEventListener("arError", (e) => {
+            addLog(
+              `MindAR error: ${e.detail?.error || "Unknown error"}`,
+              "error"
+            );
+            updateStatus("AR Error occurred");
+          });
+
+          // Monitor for stuck loading
+          setTimeout(() => {
+            if (
+              status.textContent.includes("loading") ||
+              status.textContent.includes("starting")
+            ) {
+              addLog(
+                "AR initialization seems stuck - checking components...",
+                "error"
+              );
+              debugStuckLoading();
+            }
+          }, 10000); // 10 second timeout
+        } catch (error) {
+          addLog(`AR initialization failed: ${error.message}`, "error");
+          updateStatus("AR initialization failed");
+        }
+      }
+
+      async function startMindAR() {
+        try {
+          const scene = document.getElementById("arScene");
+          const component = scene.components["mindar-image"];
+
+          if (!component) {
+            addLog("MindAR component not found on scene", "error");
+            updateStatus("MindAR component missing");
+            return;
+          }
+
+          addLog("Starting MindAR component...");
+          updateStatus("Starting MindAR...");
+
+          // Try different start methods
+          if (typeof component.start === "function") {
+            addLog("Using component.start()...");
+            await component.start();
+          } else if (typeof component.play === "function") {
+            addLog("Using component.play()...");
+            await component.play();
+          } else {
+            addLog("Using scene emit...");
+            scene.emit("arStart");
+          }
+
+          addLog("MindAR start command executed", "success");
+        } catch (error) {
+          addLog(`MindAR start failed: ${error.message}`, "error");
+          updateStatus("MindAR start failed");
+        }
+      }
+
+      function debugStuckLoading() {
+        addLog("=== Debugging Stuck Loading ===");
+
+        const scene = document.getElementById("arScene");
+        if (!scene) {
+          addLog("Scene element not found", "error");
+          return;
+        }
+
+        const component = scene.components["mindar-image"];
+        if (!component) {
+          addLog("MindAR component not attached", "error");
+          return;
+        }
+
+        addLog(`Component data: ${JSON.stringify(component.data)}`);
+
+        // Check for video element
+        const video = document.querySelector("video");
+        if (video) {
+          addLog(
+            `Video element found: ${video.videoWidth}x${video.videoHeight}`
+          );
+          addLog(`Video ready state: ${video.readyState}`);
+          addLog(`Video playing: ${!video.paused && !video.ended}`);
+        } else {
+          addLog("No video element found - camera not started", "error");
+        }
+
+        // Check browser console for errors
+        addLog("Check browser console for additional errors");
+      }
+
+      addLog("AR debug tool ready");
+      updateStatus("Ready - click buttons to test");
+    </script>
+  </body>
+</html>
