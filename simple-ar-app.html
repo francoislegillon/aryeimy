@@ -12,7 +12,7 @@
         <h1 id="appTitle">AR QR Gallery</h1>
         <p class="lead" id="statusMessage">Starting AR experience...</p>
       </section>
-      
+
       <section id="arShell" class="ar-shell" aria-live="polite">
         <div class="ar-shell__canvas">
           <a-scene
@@ -28,7 +28,10 @@
               <!-- Simple test object to see when tracking works -->
               <a-box position="0 0 0" color="red" scale="0.1 0.1 0.1"></a-box>
             </a-entity>
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+            <a-camera
+              position="0 0 0"
+              look-controls="enabled: false"
+            ></a-camera>
           </a-scene>
         </div>
         <div class="ar-shell__instructions" id="arInstructions">
@@ -38,68 +41,68 @@
         </div>
       </section>
     </main>
-    
+
     <script src="./libs/aframe.min.js"></script>
     <script src="./libs/mindar-image-aframe.prod.js"></script>
     <script>
       // Simple initialization similar to minimal test
-      document.addEventListener('DOMContentLoaded', () => {
-        const statusMessage = document.getElementById('statusMessage');
-        const arShell = document.getElementById('arShell');
-        
+      document.addEventListener("DOMContentLoaded", () => {
+        const statusMessage = document.getElementById("statusMessage");
+        const arShell = document.getElementById("arShell");
+
         function updateStatus(message) {
-          console.log('[AR] ' + message);
+          console.log("[AR] " + message);
           if (statusMessage) {
             statusMessage.textContent = message;
           }
         }
-        
-        updateStatus('Libraries loading...');
-        
+
+        updateStatus("Libraries loading...");
+
         // Wait for A-Frame to be ready
         if (window.AFRAME) {
-          updateStatus('A-Frame ready, initializing AR...');
+          updateStatus("A-Frame ready, initializing AR...");
           initializeAR();
         } else {
-          window.addEventListener('load', () => {
-            updateStatus('A-Frame ready, initializing AR...');
+          window.addEventListener("load", () => {
+            updateStatus("A-Frame ready, initializing AR...");
             initializeAR();
           });
         }
-        
+
         function initializeAR() {
-          const scene = document.getElementById('arScene');
+          const scene = document.getElementById("arScene");
           if (!scene) {
-            updateStatus('Error: AR scene not found');
+            updateStatus("Error: AR scene not found");
             return;
           }
-          
+
           // Show AR view immediately
           arShell.hidden = false;
-          
+
           // Monitor AR events
-          scene.addEventListener('arReady', () => {
-            updateStatus('AR ready - camera active!');
+          scene.addEventListener("arReady", () => {
+            updateStatus("AR ready - camera active!");
           });
-          
-          scene.addEventListener('arError', (e) => {
-            updateStatus('AR error: ' + JSON.stringify(e.detail));
+
+          scene.addEventListener("arError", (e) => {
+            updateStatus("AR error: " + JSON.stringify(e.detail));
           });
-          
-          scene.addEventListener('targetFound', () => {
-            updateStatus('Target found! Look for the red box.');
+
+          scene.addEventListener("targetFound", () => {
+            updateStatus("Target found! Look for the red box.");
           });
-          
-          scene.addEventListener('targetLost', () => {
-            updateStatus('Target lost - point camera at artwork');
+
+          scene.addEventListener("targetLost", () => {
+            updateStatus("Target lost - point camera at artwork");
           });
-          
-          updateStatus('AR scene initialized');
+
+          updateStatus("AR scene initialized");
         }
-        
+
         // Error handling
-        window.addEventListener('error', (e) => {
-          updateStatus('Error: ' + e.message);
+        window.addEventListener("error", (e) => {
+          updateStatus("Error: " + e.message);
         });
       });
     </script>
