@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR QR Gallery</title>
+    <link rel="stylesheet" href="./css/style.css" />
+  </head>
+  <body>
+    <main class="page" role="main">
+      <section class="status" aria-live="polite">
+        <h1 id="appTitle">AR QR Gallery</h1>
+        <p class="lead" id="statusMessage">Checking device capabilities…</p>
+        <p class="status__detail" id="statusDetail" hidden></p>
+      </section>
+      <section id="preloader" class="preloader" hidden aria-live="polite">
+        <div class="preloader__label">Preparing artwork assets…</div>
+        <div class="preloader__progress" id="preloaderBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="preloader__progress-fill" id="preloaderBarFill"></div>
+        </div>
+        <p class="preloader__detail" id="preloaderDetail">Starting asset downloads…</p>
+      </section>
+      <section id="errorView" class="error-view" hidden aria-live="polite">
+        <h2 id="errorTitle">Artwork not found</h2>
+        <p id="errorDescription">We couldn’t find an artwork for this QR code.</p>
+        <a id="errorHomeLink" class="error-view__home" href="./">Return to start</a>
+      </section>
+      <section id="arShell" class="ar-shell" hidden aria-live="polite">
+        <div class="ar-shell__canvas">
+          <a-scene
+            embedded
+            mindar-image="autoStart: false"
+            color-space="sRGB"
+            renderer="colorManagement: true; physicallyCorrectLights: true"
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false"
+          >
+            <a-entity mindar-image-target="targetIndex: 0" id="targetRoot"></a-entity>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+          </a-scene>
+        </div>
+        <div
+          class="ar-shell__instructions"
+          id="arInstructions"
+          data-default-text="Point your camera at the artwork to begin."
+        >
+          <span class="ar-shell__instructions-text" id="arInstructionsText"
+            >Point your camera at the artwork to begin.</span
+          >
+          <a
+            class="ar-shell__instructions-link"
+            id="arInstructionsLink"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            hidden
+            >Watch the demo video</a
+          >
+        </div>
+        <div class="ar-shell__warnings" id="arWarnings" hidden role="status" aria-live="polite"></div>
+      </section>
+      <section id="fallback" class="fallback" hidden aria-labelledby="fallbackTitle">
+        <div class="fallback__body">
+          <h2 id="fallbackTitle">AR preview unavailable on this device</h2>
+          <p id="fallbackDescription">
+            Your browser doesn&rsquo;t support the full augmented reality experience yet.
+            Watch the short demo video below and try again on a compatible device.
+          </p>
+          <ul id="fallbackReasons" class="fallback__reasons"></ul>
+          <div class="fallback-video" role="region" aria-label="Fallback demo video placeholder">
+            <div class="fallback-video__placeholder">Demo video placeholder</div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="page-footer" id="arFooter" hidden>
+      <a class="page-footer__link" id="aboutLink" href="#" target="_blank" rel="noopener noreferrer"
+        >About the artist</a
+      >
+    </footer>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

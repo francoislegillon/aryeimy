@@ -1,0 +1,3 @@
+# Placeholder MindAR descriptor
+# Replace this file with the binary output from the MindAR CLI/editor for the Lotus artwork.
+# Keep the filename `target.mind` so the manifest reference remains valid.
