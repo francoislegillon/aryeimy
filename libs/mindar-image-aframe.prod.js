@@ -47,6 +47,10 @@
     async _setupVideo(){
       if (this.videoEl) return;
       const video = document.createElement('video');
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
       video.playsInline = true;
       video.autoplay = true;
       video.muted = true;
