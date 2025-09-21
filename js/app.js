@@ -29,6 +29,18 @@ const instructionsState = {
   defaultText: ''
 };
 
+const appBaseUrl =
+  typeof window !== 'undefined'
+    ? (() => {
+        try {
+          return new URL('./', window.location.href).toString();
+        } catch (error) {
+          console.warn('[app] Failed to determine app base URL', error);
+          return window.location.href;
+        }
+      })()
+    : null;
+
 let arLibsPromise = null;
 
 const preloaderEls = {
@@ -110,7 +122,31 @@ function ensureCanonicalUrl(slug) {
   }
 
   const { pathname, search, hash } = window.location;
-  const canonicalPath = `/ar/${encodeURIComponent(slug)}/`;
+  const pathSegments = pathname.split('/');
+  const arIndex = pathSegments.findIndex((segment) => segment === 'ar');
+  let baseSegments;
+
+  if (arIndex !== -1) {
+    baseSegments = pathSegments.slice(0, arIndex + 1);
+  } else {
+    baseSegments = pathSegments.slice();
+    while (baseSegments.length > 1 && baseSegments[baseSegments.length - 1] === '') {
+      baseSegments.pop();
+    }
+    baseSegments.push('ar');
+  }
+
+  const normalizedBaseSegments = baseSegments.filter(
+    (segment, index) => index === 0 || segment
+  );
+
+  if (normalizedBaseSegments.length === 0 || normalizedBaseSegments[0] !== '') {
+    normalizedBaseSegments.unshift('');
+  }
+
+  const canonicalSegments = [...normalizedBaseSegments, encodeURIComponent(slug), ''];
+  const canonicalPath = canonicalSegments.join('/');
+
   const params = new URLSearchParams(search || '');
   const hasSlugParam = params.has('slug');
   params.delete('slug');
@@ -350,66 +386,99 @@ async function startARScene() {
   }
 
   await ensureARLibsLoaded();
-  await waitForSceneReady(sceneEl);
 
-  const targetUrl = state.preload.target.url;
-  sceneEl.setAttribute('mindar-image', `autoStart: false; imageTargetSrc: ${targetUrl}`);
-  targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
-  container.removeAttribute('hidden');
-  container.classList.add('ar-shell--active');
-  setInstructionsDefault();
-  clearTrackingLossTip();
+  let containerVisible = false;
+  const showContainer = () => {
+    if (!containerVisible) {
+      container.removeAttribute('hidden');
+      container.classList.add('ar-shell--active');
+      containerVisible = true;
+    }
+  };
+  const hideContainer = () => {
+    if (containerVisible) {
+      container.setAttribute('hidden', '');
+      container.classList.remove('ar-shell--active');
+      containerVisible = false;
+    }
+  };
 
-  const overlayResources = Array.isArray(state.preload.overlays) ? state.preload.overlays : [];
-  if (overlayResources.length) {
-    const entries = buildOverlays(overlayResources);
-    const planes = entries.map((entry) => entry.plane);
-    targetRoot.replaceChildren(...planes);
-    state.overlayEntries = entries;
-    state.overlayPlanes = planes;
-    planes.forEach((plane) => setOverlayVisibility(plane, false));
-  } else {
-    targetRoot.replaceChildren();
-    state.overlayEntries = [];
-    state.overlayPlanes = [];
-  }
-  setupTrackingEvents(targetRoot);
+  showContainer();
 
   try {
-    await startMindARScene(sceneEl);
-    state.arStarted = true;
-    exposeDebugState();
+    await waitForSceneReady(sceneEl);
+
+    const targetUrl = state.preload.target.url;
+    sceneEl.setAttribute('mindar-image', `autoStart: false; imageTargetSrc: ${targetUrl}`);
+    targetRoot.setAttribute('mindar-image-target', 'targetIndex: 0');
     setInstructionsDefault();
-    setStatus(
-      'success',
-      `Camera active for “${state.manifest.title}”.`,
-      'Point the device at the artwork to begin tracking.'
-    );
-  } catch (error) {
-    console.error('[app] Failed to start AR scene', error);
-    state.arStarted = false;
-    exposeDebugState();
-    markPreloaderError('Camera initialization failed.');
-    const handled = handleCameraError(error);
-    if (!handled) {
-      setStatus(
-        'error',
-        'Unable to start the AR camera.',
-        error.message || 'Check camera permissions and reload the page.'
-      );
+    clearTrackingLossTip();
+
+    const overlayResources = Array.isArray(state.preload.overlays) ? state.preload.overlays : [];
+    if (overlayResources.length) {
+      const entries = buildOverlays(overlayResources);
+      const planes = entries.map((entry) => entry.plane);
+      targetRoot.replaceChildren(...planes);
+      state.overlayEntries = entries;
+      state.overlayPlanes = planes;
+      planes.forEach((plane) => setOverlayVisibility(plane, false));
+    } else {
+      targetRoot.replaceChildren();
+      state.overlayEntries = [];
+      state.overlayPlanes = [];
     }
+    setupTrackingEvents(targetRoot);
+
+    try {
+      await startMindARScene(sceneEl);
+      state.arStarted = true;
+      exposeDebugState();
+      setInstructionsDefault();
+      setStatus(
+        'success',
+        `Camera active for “${state.manifest.title}”.`,
+        'Point the device at the artwork to begin tracking.'
+      );
+    } catch (error) {
+      console.error('[app] Failed to start AR scene', error);
+      state.arStarted = false;
+      exposeDebugState();
+      hideContainer();
+      markPreloaderError('Camera initialization failed.');
+      const handled = handleCameraError(error);
+      if (!handled) {
+        setStatus(
+          'error',
+          'Unable to start the AR camera.',
+          error.message || 'Check camera permissions and reload the page.'
+        );
+      }
+    }
+  } catch (error) {
+    hideContainer();
+    throw error;
   }
 }
 
 async function startMindARScene(sceneEl) {
+  const system = sceneEl.systems ? sceneEl.systems['mindar-image-system'] : null;
+  if (system && typeof system.start === 'function') {
+    await system.start();
+    return;
+  }
+
   let component = sceneEl.components ? sceneEl.components['mindar-image'] : null;
   if (!component) {
     component = await waitForComponent(sceneEl, 'mindar-image');
   }
   if (component && typeof component.play === 'function') {
-    await component.play();
+    const result = component.play();
+    if (result && typeof result.then === 'function') {
+      await result;
+    }
     return;
   }
+
   const event = new CustomEvent('mindar-start');
   sceneEl.dispatchEvent(event);
 }
@@ -796,8 +865,10 @@ async function ensureARLibsLoaded() {
   }
   if (!arLibsPromise) {
     arLibsPromise = (async () => {
-      await loadScript('/libs/aframe.min.js');
-      await loadScript('/libs/mindar-image-aframe.prod.js');
+      const aframeUrl = resolveScriptUrl('./libs/aframe.min.js');
+      const mindarUrl = resolveScriptUrl('./libs/mindar-image-aframe.prod.js');
+      await loadScript(aframeUrl);
+      await loadScript(mindarUrl);
     })();
   }
   await arLibsPromise;
@@ -817,6 +888,17 @@ function loadScript(src) {
     script.addEventListener('error', () => reject(new Error(`Failed to load script ${src}`)));
     document.head.appendChild(script);
   });
+}
+
+function resolveScriptUrl(path) {
+  if (!path) return path;
+  const base = appBaseUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
+  try {
+    return base ? new URL(path, base).toString() : path;
+  } catch (error) {
+    console.warn('[app] Failed to resolve script URL', path, error);
+    return path;
+  }
 }
 
 async function waitForSceneReady(sceneEl) {
