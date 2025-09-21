@@ -796,8 +796,8 @@ async function ensureARLibsLoaded() {
   }
   if (!arLibsPromise) {
     arLibsPromise = (async () => {
-      await loadScript('./libs/aframe.min.js');
-      await loadScript('./libs/mindar-image-aframe.prod.js');
+      await loadScript('/libs/aframe.min.js');
+      await loadScript('/libs/mindar-image-aframe.prod.js');
     })();
   }
   await arLibsPromise;
