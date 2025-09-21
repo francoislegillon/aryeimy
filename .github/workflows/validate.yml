@@ -1,0 +1,23 @@
+name: Validate manifests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+      - name: Validate manifest JSON files
+        run: |
+          set -eo pipefail
+          if ! command -v jq >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y jq
+          fi
+          find ar -name 'manifest.json' -print0 | while IFS= read -r -d '' file; do
+            echo "Validating $file"
+            jq empty "$file"
+          done
