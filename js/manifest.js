@@ -174,7 +174,24 @@ function ensureString(value) {
 
 function buildManifestUrl(slug) {
   const sanitized = encodeURIComponent(slug);
-  const relative = `ar/${sanitized}/manifest.json`;
-  const base = `${window.location.origin}/`;
-  return new URL(relative, base).toString();
+  const { origin, pathname } = window.location;
+  const segments = pathname.split('/').filter(Boolean);
+  const arIndex = segments.indexOf('ar');
+
+  let prefixSegments;
+  if (arIndex !== -1) {
+    prefixSegments = segments.slice(0, arIndex);
+  } else {
+    prefixSegments = [...segments];
+    if (
+      prefixSegments.length &&
+      prefixSegments[prefixSegments.length - 1].includes('.')
+    ) {
+      prefixSegments = prefixSegments.slice(0, -1);
+    }
+  }
+
+  const prefixPath = prefixSegments.length ? `/${prefixSegments.join('/')}/` : '/';
+  const manifestPath = `${prefixPath}ar/${sanitized}/manifest.json`;
+  return new URL(manifestPath, `${origin}/`).toString();
 }
