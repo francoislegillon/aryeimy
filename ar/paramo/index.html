@@ -107,7 +107,7 @@
 
     <a-scene
       id="ar-scene"
-      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; maxTrack: 1; showStats: false; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 5"
+      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; maxTrack: 1; showStats: false; filterMinCF: 0.001; filterBeta: 0.01; warmupTolerance: 2; missTolerance: 2"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true; antialias: true; powerPreference: high-performance; precision: mediump; logarithmicDepthBuffer: true"
@@ -121,7 +121,11 @@
 
       <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
 
-      <a-entity id="target-root" mindar-image-target="targetIndex: 0">
+      <a-entity
+        id="target-root"
+        mindar-image-target="targetIndex: 0"
+        smooth-tracking="enabled: true; factor: 0.98; threshold: 0.0003; maxDistance: 0.03"
+      >
         <!-- AR content will be added here -->
       </a-entity>
 
@@ -135,25 +139,29 @@
     <script>
       // Position smoothing variables
       let smoothingEnabled = true;
-      let smoothingFactor = 0.9; // Higher = more smoothing, lower = more responsive
+      let smoothingFactor = 0.95; // Much higher smoothing - more stable, less responsive
       let lastPositions = new Map();
       let lastRotations = new Map();
       let trackingConfidence = 0;
       let stableFrames = 0;
       let minStableFrames = 3;
 
-      // Smoothing component for AR elements
+      // Enhanced smoothing component for AR elements with position clamping
       AFRAME.registerComponent("smooth-tracking", {
         schema: {
           enabled: { type: "boolean", default: true },
-          factor: { type: "number", default: 0.9 },
-          threshold: { type: "number", default: 0.001 },
+          factor: { type: "number", default: 0.95 }, // Much higher smoothing
+          threshold: { type: "number", default: 0.0005 }, // Lower threshold for tighter control
+          maxDistance: { type: "number", default: 0.1 }, // Clamp sudden movements
         },
 
         init: function () {
           this.lastPos = new THREE.Vector3();
           this.lastRot = new THREE.Euler();
+          this.targetPos = new THREE.Vector3();
+          this.targetRot = new THREE.Euler();
           this.initialized = false;
+          this.frameCount = 0;
         },
 
         tick: function () {
@@ -161,32 +169,47 @@
 
           const el = this.el;
           const object3D = el.object3D;
+          this.frameCount++;
 
           if (!this.initialized) {
             this.lastPos.copy(object3D.position);
             this.lastRot.copy(object3D.rotation);
+            this.targetPos.copy(object3D.position);
+            this.targetRot.copy(object3D.rotation);
             this.initialized = true;
             return;
           }
 
-          // Smooth position
+          // Get current tracking position
           const currentPos = object3D.position.clone();
-          const distance = currentPos.distanceTo(this.lastPos);
+          const currentRot = object3D.rotation.clone();
 
-          if (distance > this.data.threshold) {
-            this.lastPos.lerp(currentPos, 1 - this.data.factor);
-            object3D.position.copy(this.lastPos);
+          // Clamp sudden movements to prevent jitter
+          const distance = currentPos.distanceTo(this.lastPos);
+          if (distance > this.data.maxDistance) {
+            // If movement is too sudden, limit it
+            const direction = currentPos.clone().sub(this.lastPos).normalize();
+            currentPos
+              .copy(this.lastPos)
+              .add(direction.multiplyScalar(this.data.maxDistance));
           }
 
-          // Smooth rotation
-          const currentRot = object3D.rotation.clone();
-          this.lastRot.x +=
-            (currentRot.x - this.lastRot.x) * (1 - this.data.factor);
-          this.lastRot.y +=
-            (currentRot.y - this.lastRot.y) * (1 - this.data.factor);
-          this.lastRot.z +=
-            (currentRot.z - this.lastRot.z) * (1 - this.data.factor);
-          object3D.rotation.copy(this.lastRot);
+          // Smooth position with aggressive interpolation
+          if (distance > this.data.threshold) {
+            this.targetPos.lerp(currentPos, 1 - this.data.factor);
+            object3D.position.copy(this.targetPos);
+            this.lastPos.copy(this.targetPos);
+          }
+
+          // Smooth rotation with aggressive interpolation
+          this.targetRot.x +=
+            (currentRot.x - this.targetRot.x) * (1 - this.data.factor);
+          this.targetRot.y +=
+            (currentRot.y - this.targetRot.y) * (1 - this.data.factor);
+          this.targetRot.z +=
+            (currentRot.z - this.targetRot.z) * (1 - this.data.factor);
+          object3D.rotation.copy(this.targetRot);
+          this.lastRot.copy(this.targetRot);
         },
       });
 
@@ -312,10 +335,10 @@
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
 
-              // Add smoothing component for stability
+              // Add enhanced smoothing component for stability
               mediaEl.setAttribute(
                 "smooth-tracking",
-                "enabled: true; factor: 0.85; threshold: 0.002"
+                "enabled: true; factor: 0.95; threshold: 0.0005; maxDistance: 0.05"
               );
 
               if (overlay.url.mp4) {
@@ -367,17 +390,17 @@
             // Add tracking event listeners for stability monitoring
             const targetRoot = document.getElementById("target-root");
             targetRoot.addEventListener("targetFound", () => {
-              console.log("🎯 Target found - starting stabilization");
+              console.log("🎯 Target found - starting enhanced stabilization");
               stableFrames = 0;
               trackingConfidence = 1;
 
-              // Add stability class to all AR elements
+              // Add enhanced stability to all AR elements
               const arElements =
                 targetRoot.querySelectorAll("a-video, a-image");
               arElements.forEach((el) => {
                 el.setAttribute(
                   "smooth-tracking",
-                  "enabled: true; factor: 0.85; threshold: 0.002"
+                  "enabled: true; factor: 0.95; threshold: 0.0005; maxDistance: 0.05"
                 );
               });
             });
