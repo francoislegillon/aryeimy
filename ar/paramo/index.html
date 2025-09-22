@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Paramo - AR Experience</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
       body {
         margin: 0;
@@ -69,7 +69,7 @@
       mindar-image="imageTargetSrc: ./target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
+      renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true; antialias: true; powerPreference: high-performance; precision: mediump"
       style="position: fixed; top: 0; left: 0; width: 100%; height: 100%"
     >
       <a-assets id="assets">
@@ -133,7 +133,12 @@
                 assetEl.setAttribute("muted", "true");
                 assetEl.setAttribute("playsinline", "true");
                 assetEl.setAttribute("crossorigin", "anonymous");
-                assetEl.setAttribute("preload", "metadata");
+                assetEl.setAttribute("preload", "auto");
+                // Performance optimizations to reduce jitter
+                assetEl.setAttribute("webkit-playsinline", "true");
+                assetEl.setAttribute("x-webkit-airplay", "allow");
+                assetEl.style.webkitTransform = "translateZ(0)"; // Hardware acceleration
+                assetEl.style.transform = "translateZ(0)";
                 
                 // Add video event listeners for debugging
                 assetEl.addEventListener("loadeddata", () => {
@@ -182,12 +187,15 @@
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
               
               if (overlay.url.mp4) {
-                // Video-specific material setup - remove black background
-                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; blending: additive`);
-                mediaEl.setAttribute("geometry", "primitive: plane");
-                // Add video-specific attributes for A-Frame
+                // Video-specific material setup - optimize for performance
+                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; blending: additive; side: double`);
+                mediaEl.setAttribute("geometry", "primitive: plane; skipCache: true");
+                // Add video-specific attributes for A-Frame with performance optimizations
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
+                // Performance hint for A-Frame
+                mediaEl.setAttribute("animation-mixer", "clip: *; loop: repeat; timeScale: 1");
+                mediaEl.setAttribute("video-controls", "");
               } else {
                 // Image material setup
                 mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}`);
