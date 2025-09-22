@@ -2,12 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
+    />
     <!-- Android-specific meta tags -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#000000" />
     <!-- Camera permissions hint -->
-    <meta http-equiv="Permissions-Policy" content="camera=*">
+    <meta http-equiv="Permissions-Policy" content="camera=*" />
     <title>Paramo - AR Experience</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -64,7 +67,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: #4CAF50;
+        background: #4caf50;
         color: white;
         border: none;
         padding: 15px 30px;
@@ -73,7 +76,7 @@
         font-weight: bold;
         cursor: pointer;
         z-index: 1000;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       }
       .start-button:hover {
         background: #45a049;
@@ -290,34 +293,38 @@
       async function startAR() {
         try {
           console.log("🤖 Starting AR for Android...");
-          
+
           // Hide start button, show loading
           document.getElementById("start-button").style.display = "none";
           document.getElementById("loading").classList.remove("hidden");
-          
+
           // Check camera permissions
           if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
             try {
               // Request camera permission explicitly
-              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+              });
               console.log("📹 Camera permission granted");
               // Stop the stream immediately, MindAR will handle it
-              stream.getTracks().forEach(track => track.stop());
+              stream.getTracks().forEach((track) => track.stop());
             } catch (permError) {
-              throw new Error("Camera permission denied. Please enable camera access and refresh.");
+              throw new Error(
+                "Camera permission denied. Please enable camera access and refresh."
+              );
             }
           }
-          
+
           // Start MindAR
-          const arSystem = document.querySelector("a-scene").systems["mindar-image-system"];
+          const arSystem =
+            document.querySelector("a-scene").systems["mindar-image-system"];
           if (arSystem) {
             await arSystem.start();
             console.log("🎯 MindAR started successfully");
           }
-          
+
           // Load AR content
           await loadARExperience();
-          
         } catch (error) {
           console.error("❌ Failed to start AR:", error);
           document.getElementById("loading").classList.add("hidden");
@@ -331,7 +338,9 @@
       // Start when page loads
       document.addEventListener("DOMContentLoaded", () => {
         console.log("📱 DOM loaded, setting up start button...");
-        document.getElementById("start-button").addEventListener("click", startAR);
+        document
+          .getElementById("start-button")
+          .addEventListener("click", startAR);
       });
     </script>
   </body>
