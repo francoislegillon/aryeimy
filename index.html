@@ -1,137 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AR QR Gallery - Working</title>
+    <title>AR QR Gallery</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* MINIMAL CSS - let A-Frame handle everything */
-        .debug {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            color: black;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: Arial;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+      }
     </style>
-</head>
-<body>
-    <div class="debug" id="debug">
-        AR Loading...
-    </div>
-    
+  </head>
+  <body>
     <!-- Let A-Frame handle ALL rendering without CSS interference -->
-    <a-scene 
-        mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-        renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true">
-        
-        <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-        
-        <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
-            
-            <!-- Enhanced AR artwork -->
-            
-            <!-- Main artwork frame -->
-            <a-box 
-                position="0 0 1.5" 
-                scale="2.5 1.5 0.2" 
-                color="#2c3e50" 
-                material="transparent: false"
-                animation="property: rotation; to: 0 5 0; dir: alternate; loop: true; dur: 4000">
-            </a-box>
-            
-            <!-- Floating title -->
-            <a-text 
-                value="🎨 PARAMO" 
-                position="0 2.0 1.8" 
-                align="center" 
-                color="#ecf0f1"
-                scale="3.0 3.0 3.0">
-            </a-text>
-            
-            <!-- Subtitle -->
-            <a-text 
-                value="Digital Art Experience" 
-                position="0 1.5 1.6" 
-                align="center" 
-                color="#bdc3c7"
-                scale="1.8 1.8 1.8">
-            </a-text>
-            
-            <!-- Decorative base -->
-            <a-cylinder
-                position="0 -1.0 1.2"
-                radius="1.5"
-                height="0.3"
-                color="#f39c12"
-                material="transparent: false">
-            </a-cylinder>
-            
-            <!-- Animated elements -->
-            <a-sphere
-                position="3.0 1.0 1.4"
-                radius="0.3"
-                color="#e74c3c"
-                animation="property: position; to: -3.0 1.0 1.4; dir: alternate; loop: true; dur: 3000">
-            </a-sphere>
-            
-            <a-sphere
-                position="-3.0 1.5 1.6"
-                radius="0.25"
-                color="#3498db"
-                animation="property: position; to: 3.0 1.5 1.6; dir: alternate; loop: true; dur: 2500">
-            </a-sphere>
-            
-            <!-- Base platform -->
-            <a-cone
-                position="0 -1.5 1.0"
-                radius-bottom="2.0"
-                radius-top="1.5"
-                height="0.5"
-                color="#9b59b6"
-                material="transparent: false">
-            </a-cone>
-            
-        </a-entity>
-        
-        <a-camera position="0 0 0"></a-camera>
-        
-    </a-scene>
+    <a-scene
+      mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
+    >
+      <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const debug = document.getElementById('debug');
-            const targetEntity = document.querySelector('#targetRoot');
-            
-            debug.innerHTML = 'Loading AR...';
-            
-            if (targetEntity) {
-                targetEntity.addEventListener('targetFound', function() {
-                    console.log('🎯 TARGET FOUND!');
-                    debug.innerHTML = '� AR Active!<br>Digital artwork visible';
-                    debug.style.background = 'rgba(0, 255, 0, 0.9)';
-                });
-                
-                targetEntity.addEventListener('targetLost', function() {
-                    console.log('❌ Target lost');
-                    debug.innerHTML = '📱 Point at paramo artwork';
-                    debug.style.background = 'rgba(255, 255, 255, 0.9)';
-                });
-            }
-        });
-    </script>
-</body>
+      <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
+        <!-- Enhanced AR artwork -->
+
+        <!-- Main artwork frame -->
+        <a-box
+          position="0 0 1.5"
+          scale="2.5 1.5 0.2"
+          color="#2c3e50"
+          material="transparent: false"
+          animation="property: rotation; to: 0 5 0; dir: alternate; loop: true; dur: 4000"
+        >
+        </a-box>
+
+        <!-- Floating title -->
+        <a-text
+          value="🎨 PARAMO"
+          position="0 2.0 1.8"
+          align="center"
+          color="#ecf0f1"
+          scale="3.0 3.0 3.0"
+        >
+        </a-text>
+
+        <!-- Subtitle -->
+        <a-text
+          value="Digital Art Experience"
+          position="0 1.5 1.6"
+          align="center"
+          color="#bdc3c7"
+          scale="1.8 1.8 1.8"
+        >
+        </a-text>
+
+        <!-- Decorative base -->
+        <a-cylinder
+          position="0 -1.0 1.2"
+          radius="1.5"
+          height="0.3"
+          color="#f39c12"
+          material="transparent: false"
+        >
+        </a-cylinder>
+
+        <!-- Animated elements -->
+        <a-sphere
+          position="3.0 1.0 1.4"
+          radius="0.3"
+          color="#e74c3c"
+          animation="property: position; to: -3.0 1.0 1.4; dir: alternate; loop: true; dur: 3000"
+        >
+        </a-sphere>
+
+        <a-sphere
+          position="-3.0 1.5 1.6"
+          radius="0.25"
+          color="#3498db"
+          animation="property: position; to: 3.0 1.5 1.6; dir: alternate; loop: true; dur: 2500"
+        >
+        </a-sphere>
+
+        <!-- Base platform -->
+        <a-cone
+          position="0 -1.5 1.0"
+          radius-bottom="2.0"
+          radius-top="1.5"
+          height="0.5"
+          color="#9b59b6"
+          material="transparent: false"
+        >
+        </a-cone>
+      </a-entity>
+
+      <a-camera position="0 0 0"></a-camera>
+    </a-scene>
+  </body>
 </html>
