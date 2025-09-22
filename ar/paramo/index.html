@@ -133,6 +133,18 @@
                 assetEl.setAttribute("muted", "true");
                 assetEl.setAttribute("playsinline", "true");
                 assetEl.setAttribute("crossorigin", "anonymous");
+                assetEl.setAttribute("preload", "metadata");
+                
+                // Add video event listeners for debugging
+                assetEl.addEventListener("loadeddata", () => {
+                  console.log(`✅ Video loaded successfully: ${overlay.id}`);
+                });
+                assetEl.addEventListener("canplay", () => {
+                  console.log(`🎬 Video can start playing: ${overlay.id}`);
+                });
+                assetEl.addEventListener("error", (e) => {
+                  console.error(`❌ Video error for ${overlay.id}:`, e);
+                });
               } else {
                 // Image asset (supports png, jpg, gif, webp)
                 assetEl = document.createElement("img");
@@ -162,10 +174,15 @@
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
-              mediaEl.setAttribute(
-                "material",
-                `transparent: true; opacity: ${overlay.opacity || 1.0}`
-              );
+              
+              if (overlay.url.mp4) {
+                // Video-specific material setup
+                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                mediaEl.setAttribute("geometry", "primitive: plane");
+              } else {
+                // Image material setup
+                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}`);
+              }
 
               targetRoot.appendChild(mediaEl);
               console.log(`✅ Added overlay: ${overlay.id}`);
