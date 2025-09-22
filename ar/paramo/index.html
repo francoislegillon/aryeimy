@@ -2,7 +2,12 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no" />
+    <!-- Android-specific meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <!-- Camera permissions hint -->
+    <meta http-equiv="Permissions-Policy" content="camera=*">
     <title>Paramo - AR Experience</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
@@ -54,6 +59,25 @@
         border-radius: 15px;
         font-size: 12px;
       }
+      .start-button {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+      .start-button:hover {
+        background: #45a049;
+      }
     </style>
   </head>
   <body>
@@ -62,11 +86,13 @@
       <p>Point your camera at the target image</p>
     </div>
 
+    <button id="start-button" class="start-button">Start AR Experience</button>
+
     <div id="error" class="error hidden"></div>
 
     <a-scene
       id="ar-scene"
-      mindar-image="imageTargetSrc: ./target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
+      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true; antialias: true; powerPreference: high-performance; precision: mediump"
@@ -260,8 +286,53 @@
         }
       }
 
+      // Start AR function with Android compatibility
+      async function startAR() {
+        try {
+          console.log("🤖 Starting AR for Android...");
+          
+          // Hide start button, show loading
+          document.getElementById("start-button").style.display = "none";
+          document.getElementById("loading").classList.remove("hidden");
+          
+          // Check camera permissions
+          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            try {
+              // Request camera permission explicitly
+              const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              console.log("📹 Camera permission granted");
+              // Stop the stream immediately, MindAR will handle it
+              stream.getTracks().forEach(track => track.stop());
+            } catch (permError) {
+              throw new Error("Camera permission denied. Please enable camera access and refresh.");
+            }
+          }
+          
+          // Start MindAR
+          const arSystem = document.querySelector("a-scene").systems["mindar-image-system"];
+          if (arSystem) {
+            await arSystem.start();
+            console.log("🎯 MindAR started successfully");
+          }
+          
+          // Load AR content
+          await loadARExperience();
+          
+        } catch (error) {
+          console.error("❌ Failed to start AR:", error);
+          document.getElementById("loading").classList.add("hidden");
+          document.getElementById("start-button").style.display = "block";
+          const errorEl = document.getElementById("error");
+          errorEl.textContent = `Error: ${error.message}`;
+          errorEl.classList.remove("hidden");
+        }
+      }
+
       // Start when page loads
-      document.addEventListener("DOMContentLoaded", loadARExperience);
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("📱 DOM loaded, setting up start button...");
+        document.getElementById("start-button").addEventListener("click", startAR);
+      });
     </script>
   </body>
 </html>
