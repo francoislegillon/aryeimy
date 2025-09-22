@@ -139,7 +139,7 @@
                 assetEl.setAttribute("x-webkit-airplay", "allow");
                 assetEl.style.webkitTransform = "translateZ(0)"; // Hardware acceleration
                 assetEl.style.transform = "translateZ(0)";
-                
+
                 // Add video event listeners for debugging
                 assetEl.addEventListener("loadeddata", () => {
                   console.log(`✅ Video loaded successfully: ${overlay.id}`);
@@ -147,11 +147,17 @@
                 assetEl.addEventListener("canplay", () => {
                   console.log(`🎬 Video can start playing: ${overlay.id}`);
                   // Explicitly play the video when it's ready
-                  assetEl.play().then(() => {
-                    console.log(`▶️ Video playing: ${overlay.id}`);
-                  }).catch((error) => {
-                    console.warn(`⚠️ Video autoplay prevented: ${overlay.id}`, error);
-                  });
+                  assetEl
+                    .play()
+                    .then(() => {
+                      console.log(`▶️ Video playing: ${overlay.id}`);
+                    })
+                    .catch((error) => {
+                      console.warn(
+                        `⚠️ Video autoplay prevented: ${overlay.id}`,
+                        error
+                      );
+                    });
                 });
                 assetEl.addEventListener("error", (e) => {
                   console.error(`❌ Video error for ${overlay.id}:`, e);
@@ -185,20 +191,34 @@
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
-              
+
               if (overlay.url.mp4) {
                 // Video-specific material setup - optimize for performance
-                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; blending: additive; side: double`);
-                mediaEl.setAttribute("geometry", "primitive: plane; skipCache: true");
+                mediaEl.setAttribute(
+                  "material",
+                  `shader: flat; transparent: true; opacity: ${
+                    overlay.opacity || 1.0
+                  }; alphaTest: 0.5; blending: additive; side: double`
+                );
+                mediaEl.setAttribute(
+                  "geometry",
+                  "primitive: plane; skipCache: true"
+                );
                 // Add video-specific attributes for A-Frame with performance optimizations
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
                 // Performance hint for A-Frame
-                mediaEl.setAttribute("animation-mixer", "clip: *; loop: repeat; timeScale: 1");
+                mediaEl.setAttribute(
+                  "animation-mixer",
+                  "clip: *; loop: repeat; timeScale: 1"
+                );
                 mediaEl.setAttribute("video-controls", "");
               } else {
                 // Image material setup
-                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                mediaEl.setAttribute(
+                  "material",
+                  `transparent: true; opacity: ${overlay.opacity || 1.0}`
+                );
               }
 
               targetRoot.appendChild(mediaEl);
@@ -215,16 +235,19 @@
           setTimeout(() => {
             loadingEl.classList.add("hidden");
             console.log("✅ AR experience ready!");
-            
+
             // Final check: ensure all videos are playing
-            const videos = document.querySelectorAll('video');
-            videos.forEach(video => {
+            const videos = document.querySelectorAll("video");
+            videos.forEach((video) => {
               if (video.paused) {
-                video.play().then(() => {
-                  console.log("🔄 Started paused video:", video.id);
-                }).catch((error) => {
-                  console.warn("⚠️ Could not start video:", video.id, error);
-                });
+                video
+                  .play()
+                  .then(() => {
+                    console.log("🔄 Started paused video:", video.id);
+                  })
+                  .catch((error) => {
+                    console.warn("⚠️ Could not start video:", video.id, error);
+                  });
               }
             });
           }, 2000);
