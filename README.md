@@ -1,12 +1,12 @@
 # AR QR Gallery
 
-A static WebAR experience scaffold built with A-Frame and MindAR. Visitors scan a QR code next to an artwork, the browser opens `/ar/<slug>`, assets are preloaded, and animated overlays render directly on top of the piece.
+A simple WebAR experience built with A-Frame and MindAR. Visitors scan a QR code next to an artwork, the browser opens the AR experience, and animated overlays render directly on top of the piece.
 
 ## Quick start
 
 1. Clone this repository.
 2. Serve the project locally with any static server (examples below).
-3. Open the served URL on a modern mobile browser and navigate to `/ar/<slug>` (e.g. `/ar/monarch`).
+3. Open the served URL on a modern mobile browser and browse the gallery.
 
 ### Using `npx serve`
 
@@ -22,99 +22,125 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080` in your browser.
 
-## Current capabilities
+## How it works
 
-- Device capability detection with a graceful fallback view (force unsupported with `?forceUnsupported=1`).
-- Deferred loading of MindAR/A-Frame until a compatible device and manifest are confirmed.
-- Manifest-driven preloading with progress UI, retry logic, and overlay ordering.
-- APNG/GIF/PNG selection, looping textures, and a lost-target tip that appears after a short delay.
-- Non-blocking warning badges for skipped overlays or large payloads.
-- Dedicated error view for missing manifests and camera-permission messaging with fallback video links.
-- Subtle footer link sourced from the manifest (`aboutLink`).
+- **Simple Architecture**: Each AR experience is completely self-contained in its own directory
+- **No Complex Routing**: Direct links to `/ar/<slug>/index.html` 
+- **Manifest-Driven**: Each experience reads a `manifest.json` file to configure overlays
+- **Browser-Native**: Uses CDN versions of A-Frame and MindAR, no build process required
+- **Mobile-First**: Optimized for mobile browsers with proper camera handling
 
 ## Sample artworks
 
-| Slug | Description | Notes |
-| ---- | ----------- | ----- |
-| `/ar/demo` | Simple dev stub used throughout implementation. | Ships with an SVG overlay and placeholder MindAR descriptor.
-| `/ar/monarch` | Monarch butterfly concept with two overlay layers. | Lightweight SVG overlays + text MindAR stub—swap for real assets before launch.
-| `/ar/lotus` | Luminous lotus concept with three overlay layers. | Same SVG placeholders; add production assets and fallback video before shipping.
-
-The repository avoids bundling large binaries by using small SVG overlays and text placeholders for `target.mind`. Replace them with production-ready assets when preparing a release.
+| Experience | Description | Link |
+| ---------- | ----------- | ---- |
+| **Demo** | Simple development example | `/ar/demo/index.html` |
+| **Monarch** | Butterfly concept with animated overlays | `/ar/monarch/index.html` |
+| **Lotus** | Luminous lotus with three dynamic layers | `/ar/lotus/index.html` |
+| **Paramo** | Interactive landscape with video elements | `/ar/paramo/index.html` |
 
 ## Repository layout
 
-- `/ar/<slug>/` – Artwork manifests, MindAR targets, overlays, and fallback videos.
-  - Each slug folder ships with an `index.html` bootloader that forwards to the main SPA.
-- `/css/` – Global styles for shell, preloader, overlays, and fallback copy.
-- `/js/` – Application modules (support detection, routing, manifest fetch, preloader, overlays, entry point).
-- `/libs/` – Vendored/stubbed A-Frame and MindAR builds for offline development.
-- `/docs/` – Operational playbooks and QR design notes.
-- `.github/workflows/` – Continuous validation of manifest JSON.
-
-```text
+```
 ar/
-  demo/
-  monarch/
-  lotus/
-css/
-docs/
-js/
-libs/
+  demo/           # Simple demo AR experience
+    index.html    # Self-contained AR app
+    manifest.json # Configuration
+    target.mind   # MindAR tracking target
+    assets/       # Overlay images/videos
+  monarch/        # Butterfly AR experience  
+  lotus/          # Lotus AR experience
+  paramo/         # Landscape AR experience
+docs/             # Documentation
+.github/workflows/ # CI validation
 ```
 
-## Known limitations
+## Key simplifications
 
-- Overlay art and fallback videos are placeholders; replace them with production assets before launch.
-- Vendored MindAR/A-Frame bundles are lightweight stubs—swap them with the official builds prior to release.
-- Full device QA (iOS/Android matrix) and QR print validation are still outstanding.
+**Before**: 1686+ lines of complex JavaScript across 6 modules, device detection, complex routing, preloading systems, fallback handling.
 
-## Asset preparation guidelines
+**After**: ~130 lines per AR experience, everything self-contained, direct approach using A-Frame and MindAR with simple manifest loading.
 
-- Provide overlays in **APNG → GIF → PNG** priority. The loader picks the best supported format automatically.
-- Keep the combined manifest payload **under 12&nbsp;MB**. A console warning (and UI badge) appears when the budget is exceeded.
-- Keep overlay dimensions ≤ **1920px** on the longest edge; the loader logs a warning if files exceed this recommendation.
-- Ensure overlays preserve transparency (use premultiplied alpha where possible).
-- Include a short `fallback.mp4` per artwork so unsupported devices or denied camera permissions can show an alternative.
-- MindAR descriptors (`target.mind`) should be generated from the exact artwork print used on-site.
+### What was removed:
+- Complex SPA routing system
+- Device capability detection 
+- Progress bars and preloading UI
+- Support for legacy browsers
+- Complex state management
+- 6 separate JavaScript modules
+- Custom CSS framework
+- Vendored library files
 
+### What remains:
+- Clean AR experiences that just work
+- Manifest-driven configuration
+- Support for images and videos
+- Error handling
+- Mobile optimization
 ## Adding a new artwork
 
-1. Duplicate one of the sample folders under `/ar/<slug>/`.
-2. Replace `target.mind` with the descriptor generated via MindAR CLI or editor.
-3. Export each overlay in APNG/GIF/PNG (at least one static PNG is required) and place them inside `/ar/<slug>/assets/`.
-4. Update `manifest.json`:
-   - Set `title`, `aboutLink`, and `fallbackVideo`.
-   - Provide `position` and `scale` arrays for each overlay (MindAR units).
-   - Adjust `zIndex` values for proper stacking order.
-5. Copy the bootloader entry page (`/ar/demo/index.html`) into the new slug so QR scans load the SPA instead of a directory listing.
-6. Test locally on `/ar/<slug>` and confirm preloader warnings are clear.
-7. Commit the folder as part of the static site so GitHub Pages (or any static host) can serve it.
+1. Create a new folder under `/ar/<slug>/` (e.g., `/ar/myart/`).
+2. Copy the structure from an existing artwork (e.g., `/ar/demo/`):
+   ```
+   ar/myart/
+     index.html      # Copy from demo and update title
+     manifest.json   # Configure your overlays
+     target.mind     # Your MindAR tracking target
+     assets/         # Your overlay images/videos
+   ```
+3. Update `manifest.json`:
+   - Set `title` and `aboutLink`
+   - Configure each overlay with `position`, `scale`, and asset URLs
+   - Supported formats: PNG, JPG, GIF, WebP, MP4
+4. Replace `target.mind` with your MindAR tracking target
+5. Add your overlay assets to the `assets/` folder
+6. Update the main gallery page (`index.html`) to include a link to your new experience
 
-## Deployment (GitHub Pages)
+### Example manifest.json:
+```json
+{
+  "title": "My Artwork",
+  "aboutLink": "https://mywebsite.com",
+  "target": "target.mind",
+  "overlays": [
+    {
+      "id": "layer-1",
+      "url": { "png": "assets/overlay1.png" },
+      "position": [0, 0, 0.1],
+      "scale": [1, 1, 1],
+      "opacity": 1.0
+    }
+  ]
+}
+```
 
-1. Push the repository to GitHub.
-2. Enable GitHub Pages (Settings → Pages → Deploy from `main` branch, root directory).
-3. Once published, verify the site loads over HTTPS and test `/ar/<slug>` URLs on both iOS Safari and Android Chrome.
-4. Update any QR codes to reference the published HTTPS URLs. See [`docs/qr-notes.md`](./docs/qr-notes.md) for design tips.
+## Asset guidelines
 
-A GitHub Actions workflow (`.github/workflows/validate.yml`) validates manifest JSON on each push/PR. Extend it with additional checks as needed.
+- Keep overlay images ≤ 1920px on the longest edge
+- Use PNG for images with transparency
+- Use MP4 for videos (autoplay, loop, muted)
+- Generate `target.mind` files using the MindAR CLI or online editor
+- Test locally before deploying
 
-## Vendored libraries
+## Deployment
 
-The `/libs` directory contains local copies of the runtime dependencies:
+### GitHub Pages
+1. Push to GitHub
+2. Enable GitHub Pages (Settings → Pages → Deploy from `main` branch)
+3. Access via `https://yourusername.github.io/yourrepo/`
 
-- **A-Frame 1.5.0 (stub)** – swap with the official build before release and record the Subresource Integrity hash.
-- **MindAR image tracking (A-Frame build) 1.2.x (stub)** – likewise replace with the upstream bundle and document the hash.
+### Any Static Host
+Just upload the files - no build process required!
 
-Scripts are now injected dynamically once device support is confirmed, keeping initial payloads small.
+## Technical details
 
-## Documentation
+Each AR experience is a single HTML file that:
+1. Loads A-Frame and MindAR from CDN
+2. Reads the local `manifest.json` 
+3. Creates A-Frame assets and entities dynamically
+4. Handles basic error states
 
-- [`developer_spec.md`](./developer_spec.md) – product requirements and architectural context.
-- [`prompt_plan.md`](./prompt_plan.md) – original incremental implementation plan.
-- [`docs/qr-notes.md`](./docs/qr-notes.md) – QR code production tips for galleries.
-- [`docs/ops-playbook.md`](./docs/ops-playbook.md) – repeatable steps for onboarding a new artwork.
+The total code per experience is ~130 lines, making it easy to customize and maintain.
 
 ## License
 

@@ -1,192 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>AR QR Gallery</title>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
     <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 2em;
+            opacity: 0.9;
+        }
+        .gallery {
+            display: grid;
+            gap: 20px;
+            margin-top: 2em;
+        }
+        .artwork {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .artwork:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .artwork h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+        }
+        .artwork p {
+            margin: 0 0 15px 0;
+            opacity: 0.8;
+        }
+        .artwork a {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        .artwork a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 2em 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
     </style>
-  </head>
-  <body>
-    <!-- Let A-Frame handle ALL rendering without CSS interference -->
-    <a-scene
-      id="ar-scene"
-      mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
-    >
-      <!-- A-Frame Asset Management System - populated dynamically -->
-      <a-assets id="ar-assets">
-        <!-- Assets will be loaded from manifest.json -->
-      </a-assets>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AR QR Gallery</h1>
+        <p class="subtitle">Augmented Reality Art Experiences</p>
+        
+        <div class="instructions">
+            <h3>📱 How to Use</h3>
+            <p>1. Click on an artwork below to open the AR experience</p>
+            <p>2. Allow camera access when prompted</p>
+            <p>3. Point your camera at the target image</p>
+            <p>4. Watch the digital layers come to life!</p>
+        </div>
 
-      <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+        <div class="gallery">
+            <div class="artwork">
+                <h3>🦋 Monarch</h3>
+                <p>Butterfly concept with animated overlay layers</p>
+                <a href="./ar/monarch/index.html">Experience AR</a>
+            </div>
 
-      <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
-        <!-- AR Content will be loaded from manifest.json -->
+            <div class="artwork">
+                <h3>🌸 Lotus</h3>
+                <p>Luminous lotus with three dynamic layers</p>
+                <a href="./ar/lotus/index.html">Experience AR</a>
+            </div>
 
-        <!-- Title overlay -->
-        <a-text
-          value="PARAMO"
-          position="0 1.5 0.9"
-          align="center"
-          color="#ffffff"
-          scale="2.0 2.0 2.0"
-          material="transparent: true"
-        ></a-text>
-      </a-entity>
+            <div class="artwork">
+                <h3>🌿 Paramo</h3>
+                <p>Interactive landscape with video elements</p>
+                <a href="./ar/paramo/index.html">Experience AR</a>
+            </div>
 
-      <a-camera position="0 0 0"></a-camera>
-    </a-scene>
-
-    <script>
-      // Configure target path BEFORE A-Frame initializes
-      (function () {
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const manifestPath =
-          urlParams.get("manifest") || "./ar/paramo/manifest.json";
-        const basePath = manifestPath.substring(
-          0,
-          manifestPath.lastIndexOf("/") + 1
-        );
-        const targetPath = urlParams.get("target") || `${basePath}target.mind`;
-
-        console.log(`🎯 Configuring target: ${targetPath}`);
-
-        // Wait for DOM to be ready
-        document.addEventListener("DOMContentLoaded", function () {
-          console.log("📱 DOM Content Loaded");
-
-          // Update MindAR target
-          const sceneEl = document.getElementById("ar-scene");
-          if (sceneEl) {
-            const currentMindAR = sceneEl.getAttribute("mindar-image") || "";
-            const updatedMindAR = currentMindAR.replace(
-              "./ar/paramo/target.mind",
-              targetPath
-            );
-            sceneEl.setAttribute("mindar-image", updatedMindAR);
-            console.log(`✅ Updated MindAR config: ${updatedMindAR}`);
-          }
-
-          // Load manifest and create AR content dynamically using A-Frame assets
-          console.log(`📄 Loading manifest: ${manifestPath}`);
-          fetch(manifestPath)
-            .then((response) => response.json())
-            .then((manifest) => {
-              const assetsEl = document.getElementById("ar-assets");
-              const targetRoot = document.getElementById("targetRoot");
-
-              // Create assets from manifest
-              manifest.overlays.forEach((overlay, index) => {
-                let assetEl;
-                let assetId = `asset-${overlay.id}`;
-
-                // Create asset element
-                if (overlay.url.mp4) {
-                  assetEl = document.createElement("video");
-                  assetEl.src = `${basePath}${overlay.url.mp4}`;
-                  assetEl.setAttribute("autoplay", "true");
-                  assetEl.setAttribute("loop", overlay.loop || false);
-                  assetEl.setAttribute("muted", "true");
-                  assetEl.setAttribute("crossorigin", "anonymous");
-                  assetEl.setAttribute("playsinline", "true"); // Important for iOS
-                  assetEl.setAttribute("preload", "metadata"); // Load metadata first, then stream
-
-                  // Add error handling for video loading
-                  assetEl.addEventListener("loadeddata", () => {
-                    console.log(`✅ Video loaded successfully: ${overlay.id}`);
-                  });
-                  assetEl.addEventListener("error", (e) => {
-                    console.error(
-                      `❌ Video loading error for ${overlay.id}:`,
-                      e
-                    );
-                  });
-                  assetEl.addEventListener("stalled", () => {
-                    console.warn(
-                      `⚠️ Video loading stalled for ${overlay.id}, retrying...`
-                    );
-                    assetEl.load(); // Retry loading
-                  });
-                } else if (
-                  overlay.url.png ||
-                  overlay.url.jpg ||
-                  overlay.url.gif ||
-                  overlay.url.webp
-                ) {
-                  assetEl = document.createElement("img");
-                  assetEl.src = `${basePath}${
-                    overlay.url.png ||
-                    overlay.url.jpg ||
-                    overlay.url.gif ||
-                    overlay.url.webp
-                  }`;
-                  assetEl.setAttribute("crossorigin", "anonymous");
-                } else {
-                  console.warn(
-                    `⚠️ Unsupported media type for overlay: ${overlay.id}`
-                  );
-                  return;
-                }
-
-                assetEl.id = assetId;
-                assetsEl.appendChild(assetEl);
-
-                // Create AR element using asset reference
-                let mediaEl;
-                if (overlay.url.mp4) {
-                  mediaEl = document.createElement("a-video");
-                  // Add video-specific attributes for better streaming
-                  mediaEl.setAttribute(
-                    "material",
-                    `transparent: true; alphaTest: 0.1; opacity: ${
-                      overlay.opacity || 1.0
-                    }`
-                  );
-                  mediaEl.setAttribute("width", "auto");
-                  mediaEl.setAttribute("height", "auto");
-                } else {
-                  mediaEl = document.createElement("a-image");
-                  mediaEl.setAttribute(
-                    "material",
-                    `transparent: true; alphaTest: 0.1; opacity: ${
-                      overlay.opacity || 1.0
-                    }`
-                  );
-                }
-
-                mediaEl.setAttribute("id", overlay.id);
-                mediaEl.setAttribute("src", `#${assetId}`);
-                mediaEl.setAttribute("position", overlay.position.join(" "));
-                mediaEl.setAttribute("scale", overlay.scale.join(" "));
-                mediaEl.setAttribute("transparent", "true");
-
-                targetRoot.appendChild(mediaEl);
-                console.log(
-                  `✅ Added ${overlay.url.mp4 ? "video" : "image"} overlay: ${
-                    overlay.id
-                  }`
-                );
-              });
-
-              console.log(
-                `✅ Loaded ${manifest.overlays.length} AR overlays from manifest using A-Frame assets`
-              );
-            })
-            .catch((error) => {
-              console.error("❌ Failed to load manifest:", error);
-            });
-        });
-      })();
-    </script>
-  </body>
+            <div class="artwork">
+                <h3>🎯 Demo</h3>
+                <p>Simple development example</p>
+                <a href="./ar/demo/index.html">Experience AR</a>
+            </div>
+    </div>
+</body>
 </html>
