@@ -23,25 +23,6 @@
       "loop": true
     },
     {
-      "id": "layer-glow-small",
-      "url": {
-        "png": "assets/layer-fullart.png"
-      },
-      "zIndex": 2,
-      "position": [
-        0,
-        0.02,
-        0.8
-      ],
-      "scale": [
-        0.4,
-        0.4,
-        1
-      ],
-      "opacity": 0.8,
-      "loop": true
-    },
-    {
       "id": "paramo-video",
       "url": {
         "mp4": "paramo.mp4"
