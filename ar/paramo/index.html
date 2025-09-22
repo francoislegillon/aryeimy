@@ -150,80 +150,66 @@
     </div>
 
     <script>
-      // Position smoothing variables
-      let smoothingEnabled = true;
-      let smoothingFactor = 0.95; // Much higher smoothing - more stable, less responsive
-      let lastPositions = new Map();
-      let lastRotations = new Map();
-      let trackingConfidence = 0;
-      let stableFrames = 0;
-      let minStableFrames = 3;
-
-      // Enhanced smoothing component for AR elements with position clamping
-      AFRAME.registerComponent("smooth-tracking", {
+      // Chroma key component for video transparency
+      AFRAME.registerComponent('chroma-key', {
         schema: {
-          enabled: { type: "boolean", default: true },
-          factor: { type: "number", default: 0.95 }, // Much higher smoothing
-          threshold: { type: "number", default: 0.0005 }, // Lower threshold for tighter control
-          maxDistance: { type: "number", default: 0.1 }, // Clamp sudden movements
+          color: { type: 'color', default: '#000000' },
+          threshold: { type: 'number', default: 0.15 },
+          smoothing: { type: 'number', default: 0.1 }
         },
-
-        init: function () {
-          this.lastPos = new THREE.Vector3();
-          this.lastRot = new THREE.Euler();
-          this.targetPos = new THREE.Vector3();
-          this.targetRot = new THREE.Euler();
-          this.initialized = false;
-          this.frameCount = 0;
-        },
-
-        tick: function () {
-          if (!this.data.enabled) return;
-
+        
+        init: function() {
           const el = this.el;
-          const object3D = el.object3D;
-          this.frameCount++;
-
-          if (!this.initialized) {
-            this.lastPos.copy(object3D.position);
-            this.lastRot.copy(object3D.rotation);
-            this.targetPos.copy(object3D.position);
-            this.targetRot.copy(object3D.rotation);
-            this.initialized = true;
-            return;
-          }
-
-          // Get current tracking position
-          const currentPos = object3D.position.clone();
-          const currentRot = object3D.rotation.clone();
-
-          // Clamp sudden movements to prevent jitter
-          const distance = currentPos.distanceTo(this.lastPos);
-          if (distance > this.data.maxDistance) {
-            // If movement is too sudden, limit it
-            const direction = currentPos.clone().sub(this.lastPos).normalize();
-            currentPos
-              .copy(this.lastPos)
-              .add(direction.multiplyScalar(this.data.maxDistance));
-          }
-
-          // Smooth position with aggressive interpolation
-          if (distance > this.data.threshold) {
-            this.targetPos.lerp(currentPos, 1 - this.data.factor);
-            object3D.position.copy(this.targetPos);
-            this.lastPos.copy(this.targetPos);
-          }
-
-          // Smooth rotation with aggressive interpolation
-          this.targetRot.x +=
-            (currentRot.x - this.targetRot.x) * (1 - this.data.factor);
-          this.targetRot.y +=
-            (currentRot.y - this.targetRot.y) * (1 - this.data.factor);
-          this.targetRot.z +=
-            (currentRot.z - this.targetRot.z) * (1 - this.data.factor);
-          object3D.rotation.copy(this.targetRot);
-          this.lastRot.copy(this.targetRot);
-        },
+          
+          // Wait for the video to load
+          el.addEventListener('materialtextureloaded', () => {
+            const mesh = el.getObject3D('mesh');
+            if (mesh && mesh.material) {
+              const material = mesh.material;
+              
+              // Create custom shader material for chroma key
+              const vertexShader = `
+                varying vec2 vUv;
+                void main() {
+                  vUv = uv;
+                  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+              `;
+              
+              const fragmentShader = `
+                uniform sampler2D map;
+                uniform vec3 chromaColor;
+                uniform float threshold;
+                uniform float smoothing;
+                uniform float opacity;
+                varying vec2 vUv;
+                
+                void main() {
+                  vec4 textureColor = texture2D(map, vUv);
+                  float distance = length(textureColor.rgb - chromaColor);
+                  float alpha = smoothstep(threshold - smoothing, threshold + smoothing, distance);
+                  gl_FragColor = vec4(textureColor.rgb, textureColor.a * alpha * opacity);
+                }
+              `;
+              
+              const chromaKeyMaterial = new THREE.ShaderMaterial({
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                uniforms: {
+                  map: { value: material.map },
+                  chromaColor: { value: new THREE.Color(this.data.color) },
+                  threshold: { value: this.data.threshold },
+                  smoothing: { value: this.data.smoothing },
+                  opacity: { value: material.opacity || 1.0 }
+                },
+                transparent: true,
+                side: THREE.DoubleSide
+              });
+              
+              mesh.material = chromaKeyMaterial;
+            }
+          });
+        }
       });
 
       // Simple AR loader - reads manifest.json and creates AR experience
@@ -349,14 +335,16 @@
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
 
               if (overlay.url.mp4) {
-                // Video-specific material setup
+                // Video-specific material setup with transparency
                 mediaEl.setAttribute(
                   "material",
-                  `transparent: true; opacity: ${overlay.opacity || 1.0}`
+                  `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; shader: flat`
                 );
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
+                // Add chroma key component for transparency if the video has black backgrounds
+                mediaEl.setAttribute("chroma-key", "color: 0 0 0; threshold: 0.15; smoothing: 0.1");
               } else {
                 // Image material setup
                 mediaEl.setAttribute(
