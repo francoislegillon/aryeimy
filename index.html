@@ -16,39 +16,177 @@
   <body>
     <!-- Let A-Frame handle ALL rendering without CSS interference -->
     <a-scene
+      id="ar-scene"
       mindar-image="imageTargetSrc: ./ar/paramo/target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
     >
+      <!-- A-Frame Asset Management System - populated dynamically -->
+      <a-assets id="ar-assets">
+        <!-- Assets will be loaded from manifest.json -->
+      </a-assets>
+
       <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
 
       <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
-        <!-- AR Content based on manifest.json -->
-        
-        <!-- Main layer from manifest: layer-fullart.png overlay -->
-        <a-image
-          id="layer-glow"
-          src="./ar/paramo/assets/layer-fullart.png"
-          position="0 0.02 0.5"
-          scale="1.08 1.08 1"
-          transparent="true"
-          material="transparent: true; alphaTest: 0.1"
-        ></a-image>
-        
-        <!-- Optional title overlay -->
+        <!-- AR Content will be loaded from manifest.json -->
+
+        <!-- Title overlay -->
         <a-text
           value="PARAMO"
-          position="0 1.5 0.6"
+          position="0 1.5 0.9"
           align="center"
           color="#ffffff"
           scale="2.0 2.0 2.0"
           material="transparent: true"
         ></a-text>
-        
       </a-entity>
 
       <a-camera position="0 0 0"></a-camera>
     </a-scene>
+
+    <script>
+      // Configure target path BEFORE A-Frame initializes
+      (function () {
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const manifestPath =
+          urlParams.get("manifest") || "./ar/paramo/manifest.json";
+        const basePath = manifestPath.substring(
+          0,
+          manifestPath.lastIndexOf("/") + 1
+        );
+        const targetPath = urlParams.get("target") || `${basePath}target.mind`;
+
+        console.log(`🎯 Configuring target: ${targetPath}`);
+
+        // Wait for DOM to be ready
+        document.addEventListener("DOMContentLoaded", function () {
+          console.log("📱 DOM Content Loaded");
+
+          // Update MindAR target
+          const sceneEl = document.getElementById("ar-scene");
+          if (sceneEl) {
+            const currentMindAR = sceneEl.getAttribute("mindar-image") || "";
+            const updatedMindAR = currentMindAR.replace(
+              "./ar/paramo/target.mind",
+              targetPath
+            );
+            sceneEl.setAttribute("mindar-image", updatedMindAR);
+            console.log(`✅ Updated MindAR config: ${updatedMindAR}`);
+          }
+
+          // Load manifest and create AR content dynamically using A-Frame assets
+          console.log(`📄 Loading manifest: ${manifestPath}`);
+          fetch(manifestPath)
+            .then((response) => response.json())
+            .then((manifest) => {
+              const assetsEl = document.getElementById("ar-assets");
+              const targetRoot = document.getElementById("targetRoot");
+
+              // Create assets from manifest
+              manifest.overlays.forEach((overlay, index) => {
+                let assetEl;
+                let assetId = `asset-${overlay.id}`;
+
+                // Create asset element
+                if (overlay.url.mp4) {
+                  assetEl = document.createElement("video");
+                  assetEl.src = `${basePath}${overlay.url.mp4}`;
+                  assetEl.setAttribute("autoplay", "true");
+                  assetEl.setAttribute("loop", overlay.loop || false);
+                  assetEl.setAttribute("muted", "true");
+                  assetEl.setAttribute("crossorigin", "anonymous");
+                  assetEl.setAttribute("playsinline", "true"); // Important for iOS
+                  assetEl.setAttribute("preload", "metadata"); // Load metadata first, then stream
+
+                  // Add error handling for video loading
+                  assetEl.addEventListener("loadeddata", () => {
+                    console.log(`✅ Video loaded successfully: ${overlay.id}`);
+                  });
+                  assetEl.addEventListener("error", (e) => {
+                    console.error(
+                      `❌ Video loading error for ${overlay.id}:`,
+                      e
+                    );
+                  });
+                  assetEl.addEventListener("stalled", () => {
+                    console.warn(
+                      `⚠️ Video loading stalled for ${overlay.id}, retrying...`
+                    );
+                    assetEl.load(); // Retry loading
+                  });
+                } else if (
+                  overlay.url.png ||
+                  overlay.url.jpg ||
+                  overlay.url.gif ||
+                  overlay.url.webp
+                ) {
+                  assetEl = document.createElement("img");
+                  assetEl.src = `${basePath}${
+                    overlay.url.png ||
+                    overlay.url.jpg ||
+                    overlay.url.gif ||
+                    overlay.url.webp
+                  }`;
+                  assetEl.setAttribute("crossorigin", "anonymous");
+                } else {
+                  console.warn(
+                    `⚠️ Unsupported media type for overlay: ${overlay.id}`
+                  );
+                  return;
+                }
+
+                assetEl.id = assetId;
+                assetsEl.appendChild(assetEl);
+
+                // Create AR element using asset reference
+                let mediaEl;
+                if (overlay.url.mp4) {
+                  mediaEl = document.createElement("a-video");
+                  // Add video-specific attributes for better streaming
+                  mediaEl.setAttribute(
+                    "material",
+                    `transparent: true; alphaTest: 0.1; opacity: ${
+                      overlay.opacity || 1.0
+                    }`
+                  );
+                  mediaEl.setAttribute("width", "auto");
+                  mediaEl.setAttribute("height", "auto");
+                } else {
+                  mediaEl = document.createElement("a-image");
+                  mediaEl.setAttribute(
+                    "material",
+                    `transparent: true; alphaTest: 0.1; opacity: ${
+                      overlay.opacity || 1.0
+                    }`
+                  );
+                }
+
+                mediaEl.setAttribute("id", overlay.id);
+                mediaEl.setAttribute("src", `#${assetId}`);
+                mediaEl.setAttribute("position", overlay.position.join(" "));
+                mediaEl.setAttribute("scale", overlay.scale.join(" "));
+                mediaEl.setAttribute("transparent", "true");
+
+                targetRoot.appendChild(mediaEl);
+                console.log(
+                  `✅ Added ${overlay.url.mp4 ? "video" : "image"} overlay: ${
+                    overlay.id
+                  }`
+                );
+              });
+
+              console.log(
+                `✅ Loaded ${manifest.overlays.length} AR overlays from manifest using A-Frame assets`
+              );
+            })
+            .catch((error) => {
+              console.error("❌ Failed to load manifest:", error);
+            });
+        });
+      })();
+    </script>
   </body>
 </html>
