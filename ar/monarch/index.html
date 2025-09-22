@@ -1,66 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Loading artwork…</title>
-    <link rel="stylesheet" href="../../css/style.css" />
-  </head>
-  <body>
-    <main class="page" role="main">
-      <section class="status status--loading" aria-live="polite">
-        <h1>AR QR Gallery</h1>
-        <p class="lead">Preparing the augmented experience…</p>
-        <p class="status__detail">
-          If you are not redirected automatically, <a href="../../" data-home-link>open the gallery home.</a>
-        </p>
-      </section>
-    </main>
-    <script>
-      (function () {
-        try {
-          var path = window.location.pathname || '';
-          var segments = path.split('/').filter(Boolean);
-          var arIndex = segments.indexOf('ar');
-          var slug = arIndex !== -1 && segments[arIndex + 1] ? segments[arIndex + 1] : '';
-          if (!slug) {
-            return;
-          }
-
-          var slugPathSegment = '/ar/' + slug;
-          var basePathIndex = path.indexOf(slugPathSegment);
-          var basePath = basePathIndex !== -1 ? path.slice(0, basePathIndex) : '/';
-          if (!basePath) {
-            basePath = '/';
-          }
-          if (basePath.charAt(basePath.length - 1) !== '/') {
-            basePath += '/';
-          }
-
-          var params = new URLSearchParams(window.location.search || '');
-          params.set('slug', slug);
-          var query = params.toString();
-          var hash = window.location.hash || '';
-          var destination = basePath + (query ? '?' + query : '');
-
-          var homeLinks = document.querySelectorAll('[data-home-link]');
-          for (var index = 0; index < homeLinks.length; index++) {
-            homeLinks[index].setAttribute('href', basePath);
-          }
-
-          if (destination + hash === window.location.pathname + window.location.search + window.location.hash) {
-            return;
-          }
-
-          window.location.replace(destination + hash);
-        } catch (error) {
-          console.error('[bootloader] Failed to redirect to main SPA', error);
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Monarch Butterfly - AR Experience</title>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.4.0/dist/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
         }
-      })();
+        .error {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        .hidden { display: none; }
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            text-align: center;
+            z-index: 999;
+        }
+        .footer a {
+            color: white;
+            text-decoration: none;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <h2>Loading Monarch Butterfly...</h2>
+        <p>Point your camera at the target image</p>
+    </div>
+    
+    <div id="error" class="error hidden"></div>
+
+    <a-scene 
+        id="ar-scene"
+        mindar-image="imageTargetSrc: ./target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: false"
+        renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;">
+        
+        <a-assets id="assets">
+            <!-- Assets will be loaded dynamically -->
+        </a-assets>
+
+        <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+        
+        <a-entity id="target-root" mindar-image-target="targetIndex: 0">
+            <!-- AR content will be added here -->
+        </a-entity>
+
+        <a-camera position="0 0 0"></a-camera>
+    </a-scene>
+
+    <div class="footer hidden" id="footer">
+        <a href="" id="about-link" target="_blank">About this artwork</a>
+    </div>
+
+    <script>
+        // Simple AR loader - reads manifest.json and creates AR experience
+        async function loadARExperience() {
+            try {
+                console.log('🚀 Starting AR experience...');
+                
+                // Load manifest
+                const response = await fetch('./manifest.json');
+                if (!response.ok) {
+                    throw new Error(`Failed to load manifest: ${response.status}`);
+                }
+                const manifest = await response.json();
+                console.log('📄 Loaded manifest:', manifest.title);
+
+                // Update page title and about link
+                document.title = `${manifest.title} - AR Experience`;
+                if (manifest.aboutLink) {
+                    const aboutLink = document.getElementById('about-link');
+                    aboutLink.href = manifest.aboutLink;
+                    document.getElementById('footer').classList.remove('hidden');
+                }
+
+                // Get references
+                const assetsEl = document.getElementById('assets');
+                const targetRoot = document.getElementById('target-root');
+                const loadingEl = document.getElementById('loading');
+                const errorEl = document.getElementById('error');
+
+                // Create assets and overlays
+                manifest.overlays.forEach((overlay, index) => {
+                    try {
+                        // Create asset
+                        let assetEl;
+                        const assetId = `asset-${overlay.id}`;
+
+                        if (overlay.url.mp4) {
+                            // Video asset
+                            assetEl = document.createElement('video');
+                            assetEl.src = overlay.url.mp4;
+                            assetEl.setAttribute('autoplay', 'true');
+                            assetEl.setAttribute('loop', overlay.loop || false);
+                            assetEl.setAttribute('muted', 'true');
+                            assetEl.setAttribute('playsinline', 'true');
+                            assetEl.setAttribute('crossorigin', 'anonymous');
+                        } else {
+                            // Image asset (supports png, jpg, gif, webp)
+                            assetEl = document.createElement('img');
+                            const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
+                            if (!imageUrl) {
+                                console.warn(`⚠️ No supported image format for overlay: ${overlay.id}`);
+                                return;
+                            }
+                            assetEl.src = imageUrl;
+                            assetEl.setAttribute('crossorigin', 'anonymous');
+                        }
+
+                        assetEl.id = assetId;
+                        assetsEl.appendChild(assetEl);
+
+                        // Create AR element
+                        const mediaEl = document.createElement(overlay.url.mp4 ? 'a-video' : 'a-image');
+                        mediaEl.setAttribute('id', overlay.id);
+                        mediaEl.setAttribute('src', `#${assetId}`);
+                        mediaEl.setAttribute('position', overlay.position.join(' '));
+                        mediaEl.setAttribute('scale', overlay.scale.join(' '));
+                        mediaEl.setAttribute('material', `transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                        
+                        targetRoot.appendChild(mediaEl);
+                        console.log(`✅ Added overlay: ${overlay.id}`);
+
+                    } catch (error) {
+                        console.error(`❌ Failed to create overlay ${overlay.id}:`, error);
+                    }
+                });
+
+                // Wait a moment for A-Frame to initialize
+                setTimeout(() => {
+                    loadingEl.classList.add('hidden');
+                    console.log('✅ AR experience ready!');
+                }, 2000);
+
+            } catch (error) {
+                console.error('❌ Failed to load AR experience:', error);
+                document.getElementById('loading').classList.add('hidden');
+                const errorEl = document.getElementById('error');
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // Start when page loads
+        document.addEventListener('DOMContentLoaded', loadARExperience);
     </script>
-    <noscript>
-      <p>This page requires JavaScript to launch the AR experience.</p>
-      <p><a href="../../">Open the gallery home</a>.</p>
-    </noscript>
-  </body>
+</body>
 </html>
