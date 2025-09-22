@@ -24,75 +24,28 @@
       <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
 
       <a-entity mindar-image-target="targetIndex: 0" id="targetRoot">
-        <!-- Enhanced AR artwork -->
-
-        <!-- Main artwork frame -->
-        <a-box
-          position="0 0 1.5"
-          scale="2.5 1.5 0.2"
-          color="#2c3e50"
-          material="transparent: false"
-          animation="property: rotation; to: 0 5 0; dir: alternate; loop: true; dur: 4000"
-        >
-        </a-box>
-
-        <!-- Floating title -->
+        <!-- AR Content based on manifest.json -->
+        
+        <!-- Main layer from manifest: layer-fullart.png overlay -->
+        <a-image
+          id="layer-glow"
+          src="./ar/paramo/assets/layer-fullart.png"
+          position="0 0.02 0.5"
+          scale="1.08 1.08 1"
+          transparent="true"
+          material="transparent: true; alphaTest: 0.1"
+        ></a-image>
+        
+        <!-- Optional title overlay -->
         <a-text
-          value="🎨 PARAMO"
-          position="0 2.0 1.8"
+          value="PARAMO"
+          position="0 1.5 0.6"
           align="center"
-          color="#ecf0f1"
-          scale="3.0 3.0 3.0"
-        >
-        </a-text>
-
-        <!-- Subtitle -->
-        <a-text
-          value="Digital Art Experience"
-          position="0 1.5 1.6"
-          align="center"
-          color="#bdc3c7"
-          scale="1.8 1.8 1.8"
-        >
-        </a-text>
-
-        <!-- Decorative base -->
-        <a-cylinder
-          position="0 -1.0 1.2"
-          radius="1.5"
-          height="0.3"
-          color="#f39c12"
-          material="transparent: false"
-        >
-        </a-cylinder>
-
-        <!-- Animated elements -->
-        <a-sphere
-          position="3.0 1.0 1.4"
-          radius="0.3"
-          color="#e74c3c"
-          animation="property: position; to: -3.0 1.0 1.4; dir: alternate; loop: true; dur: 3000"
-        >
-        </a-sphere>
-
-        <a-sphere
-          position="-3.0 1.5 1.6"
-          radius="0.25"
-          color="#3498db"
-          animation="property: position; to: 3.0 1.5 1.6; dir: alternate; loop: true; dur: 2500"
-        >
-        </a-sphere>
-
-        <!-- Base platform -->
-        <a-cone
-          position="0 -1.5 1.0"
-          radius-bottom="2.0"
-          radius-top="1.5"
-          height="0.5"
-          color="#9b59b6"
-          material="transparent: false"
-        >
-        </a-cone>
+          color="#ffffff"
+          scale="2.0 2.0 2.0"
+          material="transparent: true"
+        ></a-text>
+        
       </a-entity>
 
       <a-camera position="0 0 0"></a-camera>
