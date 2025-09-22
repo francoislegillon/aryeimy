@@ -25,19 +25,19 @@ Then open `http://localhost:8080` in your browser.
 ## How it works
 
 - **Simple Architecture**: Each AR experience is completely self-contained in its own directory
-- **No Complex Routing**: Direct links to `/ar/<slug>/index.html` 
+- **No Complex Routing**: Direct links to `/ar/<slug>/index.html`
 - **Manifest-Driven**: Each experience reads a `manifest.json` file to configure overlays
 - **Browser-Native**: Uses CDN versions of A-Frame and MindAR, no build process required
 - **Mobile-First**: Optimized for mobile browsers with proper camera handling
 
 ## Sample artworks
 
-| Experience | Description | Link |
-| ---------- | ----------- | ---- |
-| **Demo** | Simple development example | `/ar/demo/index.html` |
-| **Monarch** | Butterfly concept with animated overlays | `/ar/monarch/index.html` |
-| **Lotus** | Luminous lotus with three dynamic layers | `/ar/lotus/index.html` |
-| **Paramo** | Interactive landscape with video elements | `/ar/paramo/index.html` |
+| Experience  | Description                               | Link                     |
+| ----------- | ----------------------------------------- | ------------------------ |
+| **Demo**    | Simple development example                | `/ar/demo/index.html`    |
+| **Monarch** | Butterfly concept with animated overlays  | `/ar/monarch/index.html` |
+| **Lotus**   | Luminous lotus with three dynamic layers  | `/ar/lotus/index.html`   |
+| **Paramo**  | Interactive landscape with video elements | `/ar/paramo/index.html`  |
 
 ## Repository layout
 
@@ -48,7 +48,7 @@ ar/
     manifest.json # Configuration
     target.mind   # MindAR tracking target
     assets/       # Overlay images/videos
-  monarch/        # Butterfly AR experience  
+  monarch/        # Butterfly AR experience
   lotus/          # Lotus AR experience
   paramo/         # Landscape AR experience
 docs/             # Documentation
@@ -62,8 +62,9 @@ docs/             # Documentation
 **After**: ~130 lines per AR experience, everything self-contained, direct approach using A-Frame and MindAR with simple manifest loading.
 
 ### What was removed:
+
 - Complex SPA routing system
-- Device capability detection 
+- Device capability detection
 - Progress bars and preloading UI
 - Support for legacy browsers
 - Complex state management
@@ -72,11 +73,13 @@ docs/             # Documentation
 - Vendored library files
 
 ### What remains:
+
 - Clean AR experiences that just work
 - Manifest-driven configuration
 - Support for images and videos
 - Error handling
 - Mobile optimization
+
 ## Adding a new artwork
 
 1. Create a new folder under `/ar/<slug>/` (e.g., `/ar/myart/`).
@@ -97,6 +100,7 @@ docs/             # Documentation
 6. Update the main gallery page (`index.html`) to include a link to your new experience
 
 ### Example manifest.json:
+
 ```json
 {
   "title": "My Artwork",
@@ -125,18 +129,21 @@ docs/             # Documentation
 ## Deployment
 
 ### GitHub Pages
+
 1. Push to GitHub
 2. Enable GitHub Pages (Settings → Pages → Deploy from `main` branch)
 3. Access via `https://yourusername.github.io/yourrepo/`
 
 ### Any Static Host
+
 Just upload the files - no build process required!
 
 ## Technical details
 
 Each AR experience is a single HTML file that:
+
 1. Loads A-Frame and MindAR from CDN
-2. Reads the local `manifest.json` 
+2. Reads the local `manifest.json`
 3. Creates A-Frame assets and entities dynamically
 4. Handles basic error states
 
