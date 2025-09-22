@@ -129,7 +129,7 @@
                 assetEl = document.createElement("video");
                 assetEl.src = overlay.url.mp4;
                 assetEl.setAttribute("autoplay", "true");
-                assetEl.setAttribute("loop", overlay.loop || false);
+                assetEl.setAttribute("loop", "true");
                 assetEl.setAttribute("muted", "true");
                 assetEl.setAttribute("playsinline", "true");
                 assetEl.setAttribute("crossorigin", "anonymous");
@@ -182,8 +182,8 @@
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
               
               if (overlay.url.mp4) {
-                // Video-specific material setup
-                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                // Video-specific material setup - remove black background
+                mediaEl.setAttribute("material", `shader: flat; transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; blending: additive`);
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 // Add video-specific attributes for A-Frame
                 mediaEl.setAttribute("autoplay", "true");
