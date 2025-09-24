@@ -6,6 +6,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
     />
+    <!-- Prevent caching for development -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <!-- Android-specific meta tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
@@ -217,8 +221,11 @@
         try {
           console.log("🚀 Starting AR experience...");
 
-          // Load manifest
-          const response = await fetch("./manifest.json");
+          // Create cache-busting timestamp
+          const cacheBuster = Date.now();
+
+          // Load manifest with cache busting
+          const response = await fetch(`./manifest.json?v=${cacheBuster}`);
           if (!response.ok) {
             throw new Error(`Failed to load manifest: ${response.status}`);
           }
@@ -247,9 +254,9 @@
               const assetId = `asset-${overlay.id}`;
 
               if (overlay.url.mp4) {
-                // Video asset
+                // Video asset with cache busting
                 assetEl = document.createElement("video");
-                assetEl.src = overlay.url.mp4;
+                assetEl.src = `${overlay.url.mp4}?v=${cacheBuster}`;
                 assetEl.setAttribute("autoplay", "true");
                 assetEl.setAttribute("loop", "true");
                 assetEl.setAttribute("muted", "true");
@@ -305,7 +312,7 @@
                   console.warn(`⚠️ Video stalled: ${overlay.id}`);
                 });
               } else {
-                // Image asset (supports png, jpg, gif, webp)
+                // Image asset (supports png, jpg, gif, webp) with cache busting
                 assetEl = document.createElement("img");
                 const imageUrl =
                   overlay.url.png ||
@@ -318,7 +325,7 @@
                   );
                   return;
                 }
-                assetEl.src = imageUrl;
+                assetEl.src = `${imageUrl}?v=${cacheBuster}`;
                 assetEl.setAttribute("crossorigin", "anonymous");
               }
 
@@ -441,6 +448,15 @@
       // Start when page loads
       document.addEventListener("DOMContentLoaded", () => {
         console.log("📱 DOM loaded, setting up start button...");
+        
+        // Add cache busting to target.mind file
+        const scene = document.querySelector("a-scene");
+        const cacheBuster = Date.now();
+        const currentSrc = scene.getAttribute("mindar-image");
+        const updatedSrc = currentSrc.replace("./target.mind", `./target.mind?v=${cacheBuster}`);
+        scene.setAttribute("mindar-image", updatedSrc);
+        console.log("🎯 Updated target with cache buster");
+        
         document
           .getElementById("start-button")
           .addEventListener("click", startAR);
