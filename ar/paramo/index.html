@@ -121,10 +121,10 @@
 
     <a-scene
       id="ar-scene"
-      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no"
+      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="alpha: true; antialias: true; colorManagement: true; physicallyCorrectLights: true"
+      renderer="alpha: true; antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: highp; powerPreference: high-performance"
       style="position: fixed; top: 0; left: 0; width: 100%; height: 100%"
       embedded
     >
@@ -137,6 +137,8 @@
       <a-entity
         id="target-root"
         mindar-image-target="targetIndex: 0"
+        animation-mixer=""
+        smooth="enabled: true; factor: 0.9"
       >
         <!-- AR content will be added here -->
       </a-entity>
@@ -213,6 +215,42 @@
               mesh.material = chromaKeyMaterial;
             }
           });
+        }
+      });
+
+      // Smoothing component for better tracking stability
+      AFRAME.registerComponent('smooth', {
+        schema: {
+          enabled: { type: 'boolean', default: true },
+          factor: { type: 'number', default: 0.9 }
+        },
+        
+        init: function() {
+          this.previousPosition = new THREE.Vector3();
+          this.previousRotation = new THREE.Euler();
+          this.targetPosition = new THREE.Vector3();
+          this.targetRotation = new THREE.Euler();
+        },
+        
+        tick: function() {
+          if (!this.data.enabled) return;
+          
+          const el = this.el;
+          const object3D = el.object3D;
+          
+          // Get current target position and rotation
+          this.targetPosition.copy(object3D.position);
+          this.targetRotation.copy(object3D.rotation);
+          
+          // Apply smoothing
+          this.previousPosition.lerp(this.targetPosition, 1 - this.data.factor);
+          this.previousRotation.x += (this.targetRotation.x - this.previousRotation.x) * (1 - this.data.factor);
+          this.previousRotation.y += (this.targetRotation.y - this.previousRotation.y) * (1 - this.data.factor);
+          this.previousRotation.z += (this.targetRotation.z - this.previousRotation.z) * (1 - this.data.factor);
+          
+          // Apply smoothed values
+          object3D.position.copy(this.previousPosition);
+          object3D.rotation.copy(this.previousRotation);
         }
       });
 
