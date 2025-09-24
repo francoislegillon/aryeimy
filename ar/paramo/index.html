@@ -350,8 +350,15 @@
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                // Add chroma key component for transparency - more aggressive black removal
-                mediaEl.setAttribute("chroma-key", "color: #000000; threshold: 0.3; smoothing: 0.05");
+                
+                // Set chroma key color based on video ID
+                let chromaColor = "#000000"; // default black
+                if (overlay.id === "paramo-video") {
+                  chromaColor = "rgb(153,199,190)"; // Custom background color
+                }
+                
+                // Add chroma key component for transparency
+                mediaEl.setAttribute("chroma-key", `color: ${chromaColor}; threshold: 0.3; smoothing: 0.05`);
               } else {
                 // Image material setup
                 mediaEl.setAttribute(
