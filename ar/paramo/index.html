@@ -338,13 +338,13 @@
                 // Video-specific material setup with transparency
                 mediaEl.setAttribute(
                   "material",
-                  `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.5; shader: flat`
+                  `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.1; shader: flat`
                 );
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                // Add chroma key component for transparency if the video has black backgrounds
-                mediaEl.setAttribute("chroma-key", "color: 0 0 0; threshold: 0.15; smoothing: 0.1");
+                // Add chroma key component for transparency - more aggressive black removal
+                mediaEl.setAttribute("chroma-key", "color: #000000; threshold: 0.3; smoothing: 0.05");
               } else {
                 // Image material setup
                 mediaEl.setAttribute(
