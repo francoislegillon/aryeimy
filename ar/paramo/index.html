@@ -7,7 +7,10 @@
       content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
     />
     <!-- Prevent caching for development -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta
+      http-equiv="Cache-Control"
+      content="no-cache, no-store, must-revalidate"
+    />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <!-- Android-specific meta tags -->
@@ -40,7 +43,7 @@
         height: 100vh;
         overflow: hidden;
       }
-      
+
       a-scene {
         /* Ensure scene covers full viewport */
         width: 100% !important;
@@ -143,9 +146,9 @@
         <!-- AR content will be added here -->
       </a-entity>
 
-      <a-camera 
-        position="0 0 0" 
-        look-controls="enabled: false" 
+      <a-camera
+        position="0 0 0"
+        look-controls="enabled: false"
         cursor="rayOrigin: mouse"
         wasd-controls="enabled: false"
       ></a-camera>
@@ -157,22 +160,22 @@
 
     <script>
       // Chroma key component for video transparency
-      AFRAME.registerComponent('chroma-key', {
+      AFRAME.registerComponent("chroma-key", {
         schema: {
-          color: { type: 'color', default: '#000000' },
-          threshold: { type: 'number', default: 0.15 },
-          smoothing: { type: 'number', default: 0.1 }
+          color: { type: "color", default: "#000000" },
+          threshold: { type: "number", default: 0.15 },
+          smoothing: { type: "number", default: 0.1 },
         },
-        
-        init: function() {
+
+        init: function () {
           const el = this.el;
-          
+
           // Wait for the video to load
-          el.addEventListener('materialtextureloaded', () => {
-            const mesh = el.getObject3D('mesh');
+          el.addEventListener("materialtextureloaded", () => {
+            const mesh = el.getObject3D("mesh");
             if (mesh && mesh.material) {
               const material = mesh.material;
-              
+
               // Create custom shader material for chroma key
               const vertexShader = `
                 varying vec2 vUv;
@@ -181,7 +184,7 @@
                   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                 }
               `;
-              
+
               const fragmentShader = `
                 uniform sampler2D map;
                 uniform vec3 chromaColor;
@@ -189,7 +192,7 @@
                 uniform float smoothing;
                 uniform float opacity;
                 varying vec2 vUv;
-                
+
                 void main() {
                   vec4 textureColor = texture2D(map, vUv);
                   float distance = length(textureColor.rgb - chromaColor);
@@ -197,7 +200,7 @@
                   gl_FragColor = vec4(textureColor.rgb, textureColor.a * alpha * opacity);
                 }
               `;
-              
+
               const chromaKeyMaterial = new THREE.ShaderMaterial({
                 vertexShader: vertexShader,
                 fragmentShader: fragmentShader,
@@ -206,52 +209,58 @@
                   chromaColor: { value: new THREE.Color(this.data.color) },
                   threshold: { value: this.data.threshold },
                   smoothing: { value: this.data.smoothing },
-                  opacity: { value: material.opacity || 1.0 }
+                  opacity: { value: material.opacity || 1.0 },
                 },
                 transparent: true,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
               });
-              
+
               mesh.material = chromaKeyMaterial;
             }
           });
-        }
+        },
       });
 
       // Smoothing component for better tracking stability
-      AFRAME.registerComponent('smooth', {
+      AFRAME.registerComponent("smooth", {
         schema: {
-          enabled: { type: 'boolean', default: true },
-          factor: { type: 'number', default: 0.9 }
+          enabled: { type: "boolean", default: true },
+          factor: { type: "number", default: 0.9 },
         },
-        
-        init: function() {
+
+        init: function () {
           this.previousPosition = new THREE.Vector3();
           this.previousRotation = new THREE.Euler();
           this.targetPosition = new THREE.Vector3();
           this.targetRotation = new THREE.Euler();
         },
-        
-        tick: function() {
+
+        tick: function () {
           if (!this.data.enabled) return;
-          
+
           const el = this.el;
           const object3D = el.object3D;
-          
+
           // Get current target position and rotation
           this.targetPosition.copy(object3D.position);
           this.targetRotation.copy(object3D.rotation);
-          
+
           // Apply smoothing
           this.previousPosition.lerp(this.targetPosition, 1 - this.data.factor);
-          this.previousRotation.x += (this.targetRotation.x - this.previousRotation.x) * (1 - this.data.factor);
-          this.previousRotation.y += (this.targetRotation.y - this.previousRotation.y) * (1 - this.data.factor);
-          this.previousRotation.z += (this.targetRotation.z - this.previousRotation.z) * (1 - this.data.factor);
-          
+          this.previousRotation.x +=
+            (this.targetRotation.x - this.previousRotation.x) *
+            (1 - this.data.factor);
+          this.previousRotation.y +=
+            (this.targetRotation.y - this.previousRotation.y) *
+            (1 - this.data.factor);
+          this.previousRotation.z +=
+            (this.targetRotation.z - this.previousRotation.z) *
+            (1 - this.data.factor);
+
           // Apply smoothed values
           object3D.position.copy(this.previousPosition);
           object3D.rotation.copy(this.previousRotation);
-        }
+        },
       });
 
       // Simple AR loader - reads manifest.json and creates AR experience
@@ -291,10 +300,11 @@
               let assetEl;
               const assetId = `asset-${overlay.id}`;
 
-              if (overlay.url.mp4) {
+              if (overlay.url.mp4 || overlay.url.webm) {
                 // Video asset with cache busting
                 assetEl = document.createElement("video");
-                assetEl.src = `${overlay.url.mp4}?v=${cacheBuster}`;
+                const videoUrl = overlay.url.mp4 || overlay.url.webm;
+                assetEl.src = `${videoUrl}?v=${cacheBuster}`;
                 assetEl.setAttribute("autoplay", "true");
                 assetEl.setAttribute("loop", "true");
                 assetEl.setAttribute("muted", "true");
@@ -372,24 +382,29 @@
 
               // Create AR element
               const mediaEl = document.createElement(
-                overlay.url.mp4 ? "a-video" : "a-image"
+                (overlay.url.mp4 || overlay.url.webm) ? "a-video" : "a-image"
               );
               mediaEl.setAttribute("id", overlay.id);
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
 
-              if (overlay.url.mp4) {
+              if (overlay.url.mp4 || overlay.url.webm) {
                 // Video-specific material setup with transparency
                 mediaEl.setAttribute(
                   "material",
-                  `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.1; shader: flat`
+                  `transparent: true; opacity: ${
+                    overlay.opacity || 1.0
+                  }; alphaTest: 0.1; shader: flat`
                 );
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
                 // Add chroma key component for transparency - more aggressive black removal
-                mediaEl.setAttribute("chroma-key", "color: #000000; threshold: 0.3; smoothing: 0.05");
+                mediaEl.setAttribute(
+                  "chroma-key",
+                  "color: #000000; threshold: 0.3; smoothing: 0.05"
+                );
               } else {
                 // Image material setup
                 mediaEl.setAttribute(
@@ -486,15 +501,18 @@
       // Start when page loads
       document.addEventListener("DOMContentLoaded", () => {
         console.log("📱 DOM loaded, setting up start button...");
-        
+
         // Add cache busting to target.mind file
         const scene = document.querySelector("a-scene");
         const cacheBuster = Date.now();
         const currentSrc = scene.getAttribute("mindar-image");
-        const updatedSrc = currentSrc.replace("./target.mind", `./target.mind?v=${cacheBuster}`);
+        const updatedSrc = currentSrc.replace(
+          "./target.mind",
+          `./target.mind?v=${cacheBuster}`
+        );
         scene.setAttribute("mindar-image", updatedSrc);
         console.log("🎯 Updated target with cache buster");
-        
+
         document
           .getElementById("start-button")
           .addEventListener("click", startAR);

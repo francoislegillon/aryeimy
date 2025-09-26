@@ -42,6 +42,25 @@
       "loop": true
     },
     {
+      "id": "mountains-video",
+      "url": {
+        "webm": "assets/mountains.webm"
+      },
+      "zIndex": 2,
+      "position": [
+        0,
+        0,
+        0.0
+      ],
+      "scale": [
+        2.0,
+        2.0,
+        1
+      ],
+      "opacity": 0.8,
+      "loop": true
+    },
+    {
       "id": "bush-video",
       "url": {
         "mp4": "assets/bush.mp4"
