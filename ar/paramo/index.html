@@ -110,6 +110,13 @@
       .start-button:hover {
         background: #45a049;
       }
+
+      /* Hide MindAR default UI elements */
+      .mindar-ui-loading,
+      .mindar-ui-scanning,
+      .mindar-ui-error {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
@@ -124,7 +131,7 @@
 
     <a-scene
       id="ar-scene"
-      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
+      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: yes; uiScanning: yes; uiError: yes; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="alpha: true; antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: highp; powerPreference: high-performance"
