@@ -129,6 +129,12 @@
 
     <div id="error" class="error hidden"></div>
 
+    <!-- Background water audio for iOS compatibility -->
+    <audio id="water-audio" preload="auto" loop>
+      <source src="assets/water.ogg" type="audio/ogg">
+      <source src="assets/water.ogg" type="audio/mpeg">
+    </audio>
+
     <a-scene
       id="ar-scene"
       mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: yes; uiScanning: yes; uiError: yes; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
@@ -140,16 +146,9 @@
     >
       <a-assets id="assets">
         <!-- Assets will be loaded dynamically -->
-        <audio id="water-sound" src="assets/water.ogg" preload="auto" loop></audio>
       </a-assets>
 
       <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
-
-      <!-- Background water sound -->
-      <a-entity id="water-audio" 
-                sound="src: #water-sound; autoplay: false; loop: true; volume: 0.3"
-                position="0 0 0">
-      </a-entity>
 
       <a-entity
         id="target-root"
@@ -393,9 +392,6 @@
             })
             .filter(Boolean);
 
-          // Add audio preloading
-          preloadPromises.push(preloadAsset("assets/water.ogg", "audio"));
-
           // Wait for all assets to be preloaded
           await Promise.all(preloadPromises);
           console.log("✅ All assets preloaded successfully!");
@@ -605,14 +601,27 @@
           // Load AR content
           await loadARExperience();
           
-          // Start background water sound
+          // Start background water sound (iOS compatible)
           try {
-            const waterAudio = document.querySelector("#water-audio");
+            const waterAudio = document.getElementById("water-audio");
             if (waterAudio) {
-              const soundComponent = waterAudio.components.sound;
-              if (soundComponent) {
-                soundComponent.playSound();
-                console.log("🌊 Water sound started");
+              waterAudio.volume = 0.3;
+              waterAudio.loop = true;
+              
+              // iOS requires play() to be called after user interaction
+              const playPromise = waterAudio.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    console.log("🌊 Water sound started successfully");
+                  })
+                  .catch(error => {
+                    console.warn("⚠️ Audio autoplay prevented (normal on iOS):", error);
+                    // Try to play again after a short delay
+                    setTimeout(() => {
+                      waterAudio.play().catch(e => console.log("Audio play retry failed:", e));
+                    }, 1000);
+                  });
               }
             }
           } catch (audioError) {
