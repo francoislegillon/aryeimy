@@ -268,43 +268,43 @@
         return new Promise((resolve, reject) => {
           const cacheBuster = Date.now();
           const fullUrl = `${url}?v=${cacheBuster}`;
-          
-          if (type === 'video') {
-            const video = document.createElement('video');
-            video.preload = 'auto';
+
+          if (type === "video") {
+            const video = document.createElement("video");
+            video.preload = "auto";
             video.muted = true;
-            video.crossOrigin = 'anonymous';
-            
+            video.crossOrigin = "anonymous";
+
             const onLoaded = () => {
               console.log(`✅ Preloaded video: ${url}`);
               resolve(video);
             };
-            
+
             const onError = (e) => {
               console.error(`❌ Failed to preload video: ${url}`, e);
               reject(e);
             };
-            
-            video.addEventListener('loadeddata', onLoaded);
-            video.addEventListener('canplaythrough', onLoaded);
-            video.addEventListener('error', onError);
-            
+
+            video.addEventListener("loadeddata", onLoaded);
+            video.addEventListener("canplaythrough", onLoaded);
+            video.addEventListener("error", onError);
+
             video.src = fullUrl;
           } else {
             // Image preloading
             const img = new Image();
-            img.crossOrigin = 'anonymous';
-            
+            img.crossOrigin = "anonymous";
+
             img.onload = () => {
               console.log(`✅ Preloaded image: ${url}`);
               resolve(img);
             };
-            
+
             img.onerror = (e) => {
               console.error(`❌ Failed to preload image: ${url}`, e);
               reject(e);
             };
-            
+
             img.src = fullUrl;
           }
         });
@@ -336,28 +336,36 @@
 
           // Update loading text to show preloading
           const loadingEl = document.getElementById("loading");
-          loadingEl.innerHTML = '<h3>Loading AR Experience...</h3><p>Preloading assets...</p>';
+          loadingEl.innerHTML =
+            "<h3>Loading AR Experience...</h3><p>Preloading assets...</p>";
 
           // Preload all assets first
           console.log("📦 Preloading all assets...");
-          const preloadPromises = manifest.overlays.map(overlay => {
-            if (overlay.url.mp4 || overlay.url.webm) {
-              const videoUrl = overlay.url.mp4 || overlay.url.webm;
-              return preloadAsset(videoUrl, 'video');
-            } else {
-              const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
-              if (imageUrl) {
-                return preloadAsset(imageUrl, 'image');
+          const preloadPromises = manifest.overlays
+            .map((overlay) => {
+              if (overlay.url.mp4 || overlay.url.webm) {
+                const videoUrl = overlay.url.mp4 || overlay.url.webm;
+                return preloadAsset(videoUrl, "video");
+              } else {
+                const imageUrl =
+                  overlay.url.png ||
+                  overlay.url.jpg ||
+                  overlay.url.gif ||
+                  overlay.url.webp;
+                if (imageUrl) {
+                  return preloadAsset(imageUrl, "image");
+                }
               }
-            }
-          }).filter(Boolean);
+            })
+            .filter(Boolean);
 
           // Wait for all assets to be preloaded
           await Promise.all(preloadPromises);
           console.log("✅ All assets preloaded successfully!");
 
           // Update loading text
-          loadingEl.innerHTML = '<h3>Loading AR Experience...</h3><p>Creating AR scene...</p>';
+          loadingEl.innerHTML =
+            "<h3>Loading AR Experience...</h3><p>Creating AR scene...</p>";
 
           // Get references
           const assetsEl = document.getElementById("assets");
@@ -453,7 +461,7 @@
 
               // Create AR element
               const mediaEl = document.createElement(
-                (overlay.url.mp4 || overlay.url.webm) ? "a-video" : "a-image"
+                overlay.url.mp4 || overlay.url.webm ? "a-video" : "a-image"
               );
               mediaEl.setAttribute("id", overlay.id);
               mediaEl.setAttribute("src", `#${assetId}`);
