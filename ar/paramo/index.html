@@ -133,9 +133,16 @@
     >
       <a-assets id="assets">
         <!-- Assets will be loaded dynamically -->
+        <audio id="water-sound" src="assets/water.ogg" preload="auto" loop></audio>
       </a-assets>
 
       <a-light type="ambient" color="#ffffff" intensity="0.6"></a-light>
+
+      <!-- Background water sound -->
+      <a-entity id="water-audio" 
+                sound="src: #water-sound; autoplay: false; loop: true; volume: 0.3"
+                position="0 0 0">
+      </a-entity>
 
       <a-entity
         id="target-root"
@@ -290,6 +297,26 @@
             video.addEventListener("error", onError);
 
             video.src = fullUrl;
+          } else if (type === "audio") {
+            const audio = document.createElement("audio");
+            audio.preload = "auto";
+            audio.crossOrigin = "anonymous";
+
+            const onLoaded = () => {
+              console.log(`✅ Preloaded audio: ${url}`);
+              resolve(audio);
+            };
+
+            const onError = (e) => {
+              console.error(`❌ Failed to preload audio: ${url}`, e);
+              reject(e);
+            };
+
+            audio.addEventListener("loadeddata", onLoaded);
+            audio.addEventListener("canplaythrough", onLoaded);
+            audio.addEventListener("error", onError);
+
+            audio.src = fullUrl;
           } else {
             // Image preloading
             const img = new Image();
@@ -358,6 +385,9 @@
               }
             })
             .filter(Boolean);
+
+          // Add audio preloading
+          preloadPromises.push(preloadAsset("assets/water.ogg", "audio"));
 
           // Wait for all assets to be preloaded
           await Promise.all(preloadPromises);
@@ -567,6 +597,20 @@
 
           // Load AR content
           await loadARExperience();
+          
+          // Start background water sound
+          try {
+            const waterAudio = document.querySelector("#water-audio");
+            if (waterAudio) {
+              const soundComponent = waterAudio.components.sound;
+              if (soundComponent) {
+                soundComponent.playSound();
+                console.log("🌊 Water sound started");
+              }
+            }
+          } catch (audioError) {
+            console.warn("⚠️ Could not start water sound:", audioError);
+          }
         } catch (error) {
           console.error("❌ Failed to start AR:", error);
           document.getElementById("loading").classList.add("hidden");
