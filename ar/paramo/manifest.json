@@ -63,7 +63,7 @@
     {
       "id": "bush-video",
       "url": {
-        "mp4": "assets/bush.mp4"
+        "webm": "assets/bush.webm"
       },
       "zIndex": 3,
       "position": [
