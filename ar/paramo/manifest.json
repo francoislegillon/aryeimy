@@ -42,11 +42,30 @@
       "loop": true
     },
     {
+      "id": "title-video",
+      "url": {
+        "webm": "assets/paramo_optimized.webm"
+      },
+      "zIndex": 3,
+      "position": [
+        0,
+        0,
+        -0.02
+      ],
+      "scale": [
+        1.5,
+        1.5,
+        1
+      ],
+      "opacity": 0.9,
+      "loop": true
+    },
+    {
       "id": "clouds-video",
       "url": {
         "webm": "assets/clouds_compatible.webm"
       },
-      "zIndex": 3,
+      "zIndex": 4,
       "position": [
         0,
         0.1,
@@ -65,7 +84,7 @@
       "url": {
         "webm": "assets/frailejones_comp.webm"
       },
-      "zIndex": 4,
+      "zIndex": 5,
       "position": [
         0,
         -0.2,
