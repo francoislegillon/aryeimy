@@ -131,8 +131,8 @@
 
     <!-- Background water audio for iOS compatibility -->
     <audio id="water-audio" preload="none" muted>
-      <source src="assets/water.mp3" type="audio/mpeg">
-      <source src="assets/water.ogg" type="audio/ogg">
+      <source src="assets/water.mp3" type="audio/mpeg" />
+      <source src="assets/water.ogg" type="audio/ogg" />
     </audio>
 
     <a-scene
@@ -600,7 +600,7 @@
 
           // Load AR content
           await loadARExperience();
-          
+
           // Start background water sound (iOS compatible with extensive error handling)
           try {
             const waterAudio = document.getElementById("water-audio");
@@ -609,21 +609,25 @@
               waterAudio.muted = false;
               waterAudio.volume = 0.3;
               waterAudio.loop = true;
-              
+
               // Load the audio first
               waterAudio.load();
-              
+
               // Wait for audio to be ready
               const tryPlayAudio = () => {
-                if (waterAudio.readyState >= 2) { // HAVE_CURRENT_DATA
+                if (waterAudio.readyState >= 2) {
+                  // HAVE_CURRENT_DATA
                   const playPromise = waterAudio.play();
                   if (playPromise !== undefined) {
                     playPromise
                       .then(() => {
                         console.log("🌊 Water sound started successfully");
                       })
-                      .catch(error => {
-                        console.log("ℹ️ Audio blocked by browser policy (this is normal):", error.name);
+                      .catch((error) => {
+                        console.log(
+                          "ℹ️ Audio blocked by browser policy (this is normal):",
+                          error.name
+                        );
                         // Don't retry automatically - just log it's blocked
                       });
                   }
@@ -632,12 +636,15 @@
                   setTimeout(tryPlayAudio, 500);
                 }
               };
-              
+
               // Start trying to play
               tryPlayAudio();
             }
           } catch (audioError) {
-            console.log("ℹ️ Audio not available (this is fine):", audioError.name);
+            console.log(
+              "ℹ️ Audio not available (this is fine):",
+              audioError.name
+            );
           }
         } catch (error) {
           console.error("❌ Failed to start AR:", error);
