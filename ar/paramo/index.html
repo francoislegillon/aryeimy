@@ -281,10 +281,13 @@
           const isIOS = isIOSDevice();
 
           // Set timeout to avoid hanging on iOS
-          const timeout = setTimeout(() => {
-            console.warn(`⏰ Preload timeout for ${type}: ${url}`);
-            resolve(null); // Resolve with null instead of rejecting
-          }, isIOS ? 5000 : 10000); // Shorter timeout on iOS
+          const timeout = setTimeout(
+            () => {
+              console.warn(`⏰ Preload timeout for ${type}: ${url}`);
+              resolve(null); // Resolve with null instead of rejecting
+            },
+            isIOS ? 5000 : 10000
+          ); // Shorter timeout on iOS
 
           if (type === "video") {
             const video = document.createElement("video");
@@ -420,17 +423,24 @@
               // Shorter timeout for iOS to prevent hanging
               await Promise.race([
                 Promise.all(preloadPromises),
-                new Promise(resolve => setTimeout(() => {
-                  console.log("📱 iOS: Continuing with partial asset loading...");
-                  resolve();
-                }, 8000))
+                new Promise((resolve) =>
+                  setTimeout(() => {
+                    console.log(
+                      "📱 iOS: Continuing with partial asset loading..."
+                    );
+                    resolve();
+                  }, 8000)
+                ),
               ]);
             } else {
               await Promise.all(preloadPromises);
             }
             console.log("✅ Asset preloading completed!");
           } catch (error) {
-            console.warn("⚠️ Some assets failed to preload, continuing...", error);
+            console.warn(
+              "⚠️ Some assets failed to preload, continuing...",
+              error
+            );
           }
 
           // Update loading text
@@ -473,7 +483,7 @@
                 });
                 assetEl.addEventListener("canplay", () => {
                   console.log(`🎬 Video ready: ${overlay.id}`);
-                  assetEl.play().catch(error => {
+                  assetEl.play().catch((error) => {
                     console.warn(`⚠️ Autoplay prevented: ${overlay.id}`, error);
                   });
                 });
@@ -484,10 +494,16 @@
                 // Image asset creation
                 console.log(`🖼️ Creating image asset for ${overlay.id}`);
                 assetEl = document.createElement("img");
-                const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
+                const imageUrl =
+                  overlay.url.png ||
+                  overlay.url.jpg ||
+                  overlay.url.gif ||
+                  overlay.url.webp;
 
                 if (!imageUrl) {
-                  console.warn(`⚠️ No supported image format for: ${overlay.id}`);
+                  console.warn(
+                    `⚠️ No supported image format for: ${overlay.id}`
+                  );
                   return;
                 }
 
@@ -518,13 +534,17 @@
 
               if (overlay.url.mp4 || overlay.url.webm) {
                 // Check if this video needs chroma key
-                const isGreenChroma = overlay.id === "title-video" || overlay.id === "bush-video";
+                const isGreenChroma =
+                  overlay.id === "title-video" || overlay.id === "bush-video";
                 const isBlueChroma = overlay.id === "clouds-video";
 
                 if (isGreenChroma) {
                   // Video with green chroma key transparency - bush gets precise threshold
-                  const threshold = overlay.id === "bush-video" ? "0.2" : "0.4";
-                  console.log(`🎬 Creating green chroma key video element for ${overlay.id} with threshold: ${threshold}`);
+                  const threshold =
+                    overlay.id === "bush-video" ? "0.25" : "0.4";
+                  console.log(
+                    `🎬 Creating green chroma key video element for ${overlay.id} with threshold: ${threshold}`
+                  );
                   mediaEl.setAttribute(
                     "material",
                     `transparent: true; opacity: ${
@@ -537,7 +557,9 @@
                   );
                 } else if (isBlueChroma) {
                   // Video with blue chroma key transparency
-                  console.log(`🎬 Creating blue chroma key video element for ${overlay.id}`);
+                  console.log(
+                    `🎬 Creating blue chroma key video element for ${overlay.id}`
+                  );
                   mediaEl.setAttribute(
                     "material",
                     `transparent: true; opacity: ${
@@ -550,7 +572,9 @@
                   );
                 } else {
                   // Video element with basic transparency (for non-chroma backgrounds)
-                  console.log(`🎥 Creating standard video element for ${overlay.id}`);
+                  console.log(
+                    `🎥 Creating standard video element for ${overlay.id}`
+                  );
                   mediaEl.setAttribute(
                     "material",
                     `transparent: true; opacity: ${
@@ -588,7 +612,7 @@
             const videos = document.querySelectorAll("video");
             videos.forEach((video) => {
               if (video.paused) {
-                video.play().catch(error => {
+                video.play().catch((error) => {
                   console.warn("⚠️ Could not start video:", video.id, error);
                 });
               }
@@ -622,22 +646,26 @@
         document.getElementById("loading").classList.remove("hidden");
 
         // Wait for scene to load, then load AR content
-        scene.addEventListener('loaded', async () => {
-          console.log("🎬 Scene loaded, loading AR content...");
+        scene.addEventListener(
+          "loaded",
+          async () => {
+            console.log("🎬 Scene loaded, loading AR content...");
 
-          // Small delay to ensure MindAR is initialized
-          setTimeout(async () => {
-            try {
-              await loadARExperience();
-            } catch (error) {
-              console.error("❌ Failed to load AR:", error);
-              document.getElementById("loading").classList.add("hidden");
-              const errorEl = document.getElementById("error");
-              errorEl.textContent = `Error: ${error.message}`;
-              errorEl.classList.remove("hidden");
-            }
-          }, 2000);
-        }, { once: true });
+            // Small delay to ensure MindAR is initialized
+            setTimeout(async () => {
+              try {
+                await loadARExperience();
+              } catch (error) {
+                console.error("❌ Failed to load AR:", error);
+                document.getElementById("loading").classList.add("hidden");
+                const errorEl = document.getElementById("error");
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.classList.remove("hidden");
+              }
+            }, 2000);
+          },
+          { once: true }
+        );
       });
     </script>
   </body>
