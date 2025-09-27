@@ -4,7 +4,27 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
+      content="width=device-width, initial-scale=1, user-scalable=no, s      // iOS detection function for optimal video format serving
+      function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      }
+
+      // Function to get appropriate video format for current device
+      function getVideoUrl(webmUrl) {
+        if (isIOSDevice()) {
+          // For iOS devices, try HEVC format first (with native alpha)
+          const hevcUrl = webmUrl.replace('.webm', '_hevc.mov').replace('.WEBM', '_hevc.mov');
+          console.log(`📱 iOS detected - trying HEVC format: ${hevcUrl}`);
+          return hevcUrl;
+        } else {
+          // For other devices, use WebM format
+          console.log(`💻 Non-iOS device - using WebM format: ${webmUrl}`);
+          return webmUrl;
+        }
+      }
+
+      // Log device detection results
+      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);"
     />
     <!-- Prevent caching for development -->
     <meta
@@ -172,23 +192,17 @@
     </div>
 
     <script>
-      // iOS detection function for dual-format video serving
+      // iOS detection function for video compatibility
       function isIOSDevice() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       }
 
       // Function to get appropriate video format for current device
       function getVideoUrl(webmUrl) {
-        if (isIOSDevice()) {
-          // For iOS devices, use HEVC format with native alpha channel support
-          const hevcUrl = webmUrl.replace('.webm', '_hevc.mov').replace('.WEBM', '_hevc.mov');
-          console.log(`📱 iOS detected - using HEVC format: ${hevcUrl}`);
-          return hevcUrl;
-        } else {
-          // For other devices, use WebM format
-          console.log(`💻 Non-iOS device - using WebM format: ${webmUrl}`);
-          return webmUrl;
-        }
+        // Always use WebM for now until HEVC alpha support is confirmed
+        // iOS will use chroma key for transparency
+        console.log(`� Using WebM format with transparency handling: ${webmUrl}`);
+        return webmUrl;
       }
 
       // Log device detection results
@@ -547,13 +561,29 @@
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 
-                // For iOS devices: use native HEVC transparency (no chroma key needed)
-                // For other devices: use WebM with chroma key fallback if needed
+                // Enhanced transparency handling for different devices
                 if (isIOS) {
-                  // iOS with HEVC has native alpha channel support - no chroma key needed
-                  console.log(`🍎 iOS detected: Using native HEVC transparency for ${overlay.id}`);
+                  // iOS with HEVC: Try native transparency first, fall back to minimal chroma key if needed
+                  const isHEVC = overlay.url.webm && videoUrl.includes('_hevc.mov');
+                  if (isHEVC) {
+                    console.log(`🍎 iOS with HEVC: Using native transparency for ${overlay.id}`);
+                    // Set material properties for native HEVC alpha
+                    mediaEl.setAttribute(
+                      "material",
+                      `transparent: true; opacity: ${
+                        overlay.opacity || 1.0
+                      }; alphaTest: 0.01; shader: flat`
+                    );
+                  } else {
+                    // Fallback: Use refined chroma key for WebM on iOS
+                    mediaEl.setAttribute(
+                      "chroma-key",
+                      "color: #000000; threshold: 0.25; smoothing: 0.03"
+                    );
+                    console.log(`🍎 iOS fallback: Using refined chroma key for ${overlay.id}`);
+                  }
                 } else {
-                  // Non-iOS devices can use WebM native transparency
+                  // Non-iOS devices: use native WebM transparency
                   console.log(`🌐 Non-iOS: Using native WebM transparency for ${overlay.id}`);
                 }
               } else {
