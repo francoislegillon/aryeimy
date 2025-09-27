@@ -522,8 +522,9 @@
                 const isBlueChroma = overlay.id === "clouds-video";
                 
                 if (isGreenChroma) {
-                  // Video with green chroma key transparency
-                  console.log(`🎬 Creating green chroma key video element for ${overlay.id}`);
+                  // Video with green chroma key transparency - bush gets precise threshold
+                  const threshold = overlay.id === "bush-video" ? "0.1" : "0.4";
+                  console.log(`🎬 Creating green chroma key video element for ${overlay.id} with threshold: ${threshold}`);
                   mediaEl.setAttribute(
                     "material",
                     `transparent: true; opacity: ${
@@ -532,7 +533,7 @@
                   );
                   mediaEl.setAttribute(
                     "chroma-key",
-                    `color: rgb(129, 251, 97); threshold: 0.4; smoothing: 0.1`
+                    `color: rgb(129, 251, 97); threshold: ${threshold}; smoothing: 0.1`
                   );
                 } else if (isBlueChroma) {
                   // Video with blue chroma key transparency
