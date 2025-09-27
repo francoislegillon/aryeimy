@@ -517,16 +517,34 @@
               mediaEl.setAttribute("geometry", "primitive: plane");
 
               if (overlay.url.mp4 || overlay.url.webm) {
-                // Video element with basic transparency
-                mediaEl.setAttribute(
-                  "material",
-                  `transparent: true; opacity: ${
-                    overlay.opacity || 1.0
-                  }; alphaTest: 0.1; shader: flat`
-                );
+                // Check if this video needs chroma key (green background videos)
+                const needsChromaKey = overlay.id === "title-video" || overlay.id === "bush-video";
+                
+                if (needsChromaKey) {
+                  // Video with chroma key transparency
+                  console.log(`🎬 Creating chroma key video element for ${overlay.id}`);
+                  mediaEl.setAttribute(
+                    "material",
+                    `transparent: true; opacity: ${
+                      overlay.opacity || 1.0
+                    }; alphaTest: 0.1; shader: flat`
+                  );
+                  mediaEl.setAttribute(
+                    "chroma-key",
+                    `color: rgb(129, 251, 97); threshold: 0.4; smoothing: 0.1`
+                  );
+                } else {
+                  // Video element with basic transparency (for non-green backgrounds)
+                  console.log(`🎥 Creating standard video element for ${overlay.id}`);
+                  mediaEl.setAttribute(
+                    "material",
+                    `transparent: true; opacity: ${
+                      overlay.opacity || 1.0
+                    }; alphaTest: 0.1; shader: flat`
+                  );
+                }
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                console.log(`� Creating video element for ${overlay.id}`);
               } else {
                 // Image element
                 mediaEl.setAttribute(
