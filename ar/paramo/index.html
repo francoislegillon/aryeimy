@@ -517,12 +517,13 @@
               mediaEl.setAttribute("geometry", "primitive: plane");
 
               if (overlay.url.mp4 || overlay.url.webm) {
-                // Check if this video needs chroma key (green background videos)
-                const needsChromaKey = overlay.id === "title-video" || overlay.id === "bush-video";
+                // Check if this video needs chroma key
+                const isGreenChroma = overlay.id === "title-video" || overlay.id === "bush-video";
+                const isBlueChroma = overlay.id === "clouds-video";
                 
-                if (needsChromaKey) {
-                  // Video with chroma key transparency
-                  console.log(`🎬 Creating chroma key video element for ${overlay.id}`);
+                if (isGreenChroma) {
+                  // Video with green chroma key transparency
+                  console.log(`🎬 Creating green chroma key video element for ${overlay.id}`);
                   mediaEl.setAttribute(
                     "material",
                     `transparent: true; opacity: ${
@@ -533,8 +534,21 @@
                     "chroma-key",
                     `color: rgb(129, 251, 97); threshold: 0.4; smoothing: 0.1`
                   );
+                } else if (isBlueChroma) {
+                  // Video with blue chroma key transparency
+                  console.log(`🎬 Creating blue chroma key video element for ${overlay.id}`);
+                  mediaEl.setAttribute(
+                    "material",
+                    `transparent: true; opacity: ${
+                      overlay.opacity || 1.0
+                    }; alphaTest: 0.1; shader: flat`
+                  );
+                  mediaEl.setAttribute(
+                    "chroma-key",
+                    `color: rgb(165, 202, 223); threshold: 0.4; smoothing: 0.1`
+                  );
                 } else {
-                  // Video element with basic transparency (for non-green backgrounds)
+                  // Video element with basic transparency (for non-chroma backgrounds)
                   console.log(`🎥 Creating standard video element for ${overlay.id}`);
                   mediaEl.setAttribute(
                     "material",
