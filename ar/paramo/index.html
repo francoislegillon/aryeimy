@@ -4,7 +4,10 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no, s      // iOS detection function for optimal format serving
+      content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
+    />
+    <script>
+      // iOS detection function for optimal format serving
       function isIOSDevice() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       }
@@ -59,8 +62,8 @@
       }
 
       // Log device detection results
-      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);"
-    />
+      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);
+    </script>
     <!-- Prevent caching for development -->
     <meta
       http-equiv="Cache-Control"
@@ -346,32 +349,6 @@
           object3D.rotation.copy(this.previousRotation);
         },
       });
-
-      // Get optimal URL with multi-format fallback support
-      function getOptimalUrl(webmUrl) {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        
-        if (isIOS) {
-          // iOS: Try HEVC first, then APNG fallback, then WebM
-          const baseUrl = webmUrl.replace('.webm', '');
-          const hevcUrl = `${baseUrl}_hevc.mov`;
-          const apngUrl = `${baseUrl}_optimized.apng`;
-          
-          return {
-            primary: hevcUrl,
-            fallback: apngUrl,
-            tertiary: webmUrl
-          };
-        } else {
-          // Desktop/Android: Use WebM directly
-          return {
-            primary: webmUrl,
-            fallback: webmUrl,
-            tertiary: webmUrl
-          };
-        }
-      }
 
       // Asset preloading function
       function preloadAsset(url, type) {
