@@ -6,64 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
     />
-    <script>
-      // iOS detection function for optimal format serving
-      function isIOSDevice() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      }
 
-      // Function to get appropriate format for current device with APNG fallback
-      function getOptimalUrl(webmUrl) {
-        if (isIOSDevice()) {
-          // For iOS: Try HEVC first, then APNG fallback, then WebM as last resort
-          const hevcUrl = webmUrl.replace('.webm', '_hevc.mov').replace('.WEBM', '_hevc.mov');
-          const apngUrl = webmUrl.replace('.webm', '_optimized.apng').replace('.WEBM', '_optimized.apng');
-          
-          console.log(`📱 iOS detected - Primary: ${hevcUrl}, Fallback: ${apngUrl}`);
-          return { primary: hevcUrl, fallback: apngUrl, webm: webmUrl };
-        } else {
-          // For other devices, use WebM format
-          console.log(`💻 Non-iOS device - using WebM format: ${webmUrl}`);
-          return { primary: webmUrl, fallback: null, webm: webmUrl };
-        }
-      }
-
-      // Enhanced asset preloading with fallback support
-      async function preloadAssetWithFallback(urls, type) {
-        // Try primary format first
-        try {
-          await preloadAsset(urls.primary, type);
-          console.log(`✅ Primary format loaded: ${urls.primary}`);
-          return urls.primary;
-        } catch (error) {
-          console.log(`❌ Primary format failed: ${error.message}`);
-          
-          // Try fallback format if available
-          if (urls.fallback) {
-            try {
-              await preloadAsset(urls.fallback, type === 'video' ? 'image' : type);
-              console.log(`✅ Fallback format loaded: ${urls.fallback}`);
-              return urls.fallback;
-            } catch (fallbackError) {
-              console.log(`❌ Fallback format failed: ${fallbackError.message}`);
-            }
-          }
-          
-          // Last resort: try WebM
-          try {
-            await preloadAsset(urls.webm, type);
-            console.log(`✅ WebM fallback loaded: ${urls.webm}`);
-            return urls.webm;
-          } catch (webmError) {
-            console.error(`❌ All formats failed for asset`);
-            throw webmError;
-          }
-        }
-      }
-
-      // Log device detection results
-      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);
-    </script>
     <!-- Prevent caching for development -->
     <meta
       http-equiv="Cache-Control"
@@ -72,7 +15,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <!-- Android-specific meta tags -->
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" c                console.log(`🎥 Creating video element for ${overlay.id}`);ntent="yes" />
     <meta name="theme-color" content="#000000" />
     <!-- Camera permissions hint -->
     <meta http-equiv="Permissions-Policy" content="camera=*" />
@@ -230,22 +173,6 @@
     </div>
 
     <script>
-      // iOS detection function for video compatibility
-      function isIOSDevice() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      }
-
-      // Function to get appropriate video format for current device
-      function getVideoUrl(webmUrl) {
-        // Always use WebM for now until HEVC alpha support is confirmed
-        // iOS will use chroma key for transparency
-        console.log(`� Using WebM format with transparency handling: ${webmUrl}`);
-        return webmUrl;
-      }
-
-      // Log device detection results
-      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);
-
       // Chroma key component for video transparency
       AFRAME.registerComponent("chroma-key", {
         schema: {
@@ -349,6 +276,14 @@
           object3D.rotation.copy(this.previousRotation);
         },
       });
+
+      // Utility Functions
+      function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      }
+
+      // Log device info for debugging
+      console.log(`🔍 Device info: iOS=${isIOSDevice()}, UserAgent=${navigator.userAgent}`);
 
       // Asset preloading function
       function preloadAsset(url, type) {
@@ -550,6 +485,25 @@
                 });
                 assetEl.addEventListener("stalled", () => {
                   console.warn(`⚠️ Video stalled: ${overlay.id}`);
+                });
+              } else {
+                // Image asset creation
+                console.log(`🖼️ Creating image asset for ${overlay.id}`);
+                assetEl = document.createElement("img");
+                const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
+                if (!imageUrl) {
+                  console.warn(`⚠️ No supported image format for overlay: ${overlay.id}`);
+                  return;
+                }
+                assetEl.src = `${imageUrl}?v=${cacheBuster}`;
+                assetEl.setAttribute("crossorigin", "anonymous");
+                
+                // Image event listeners
+                assetEl.addEventListener("load", () => {
+                  console.log(`✅ Image loaded successfully: ${overlay.id}`);
+                });
+                assetEl.addEventListener("error", (e) => {
+                  console.error(`❌ Image error for ${overlay.id}:`, e);
                 });
               }
 
