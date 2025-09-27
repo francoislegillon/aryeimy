@@ -555,8 +555,7 @@
         try {
           console.log("🤖 Starting AR for Android...");
 
-          // Hide start button, show loading
-          document.getElementById("start-button").style.display = "none";
+          // Show loading
           document.getElementById("loading").classList.remove("hidden");
 
           // Check camera permissions
@@ -589,7 +588,6 @@
         } catch (error) {
           console.error("❌ Failed to start AR:", error);
           document.getElementById("loading").classList.add("hidden");
-          document.getElementById("start-button").style.display = "block";
           const errorEl = document.getElementById("error");
           errorEl.textContent = `Error: ${error.message}`;
           errorEl.classList.remove("hidden");
