@@ -6,7 +6,6 @@
       name="viewport"
       content="width=device-width, initial-scale=1, user-scalable=no, shrink-to-fit=no"
     />
-
     <!-- Prevent caching for development -->
     <meta
       http-equiv="Cache-Control"
@@ -14,8 +13,8 @@
     />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <!-- Android-specific meta tags -->
-    <meta name="mobile-web-app-capable" c                console.log(`🎥 Creating video element for ${overlay.id}`);ntent="yes" />
+    <!-- Mobile app capabilities -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#000000" />
     <!-- Camera permissions hint -->
     <meta http-equiv="Permissions-Policy" content="camera=*" />
@@ -23,16 +22,18 @@
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     <style>
+      /* === GLOBAL STYLES === */
       body {
         margin: 0;
         padding: 0;
         font-family: Arial, sans-serif;
-        /* Hardware acceleration for smoother performance */
+        /* === PERFORMANCE OPTIMIZATIONS === */
         -webkit-transform: translateZ(0);
         transform: translateZ(0);
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
-        /* Prevent text selection and touch interactions that could interfere */
+        
+        /* === USER INTERACTION PREVENTION === */
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
@@ -173,6 +174,10 @@
     </div>
 
     <script>
+      // ========================================
+      // A-FRAME COMPONENTS
+      // ========================================
+      
       // Chroma key component for video transparency
       AFRAME.registerComponent("chroma-key", {
         schema: {
@@ -277,13 +282,18 @@
         },
       });
 
-      // Utility Functions
+      // ========================================
+      // UTILITY FUNCTIONS
+      // ========================================
+      
       function isIOSDevice() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       }
 
       // Log device info for debugging
-      console.log(`🔍 Device info: iOS=${isIOSDevice()}, UserAgent=${navigator.userAgent}`);
+      console.log(
+        `🔍 Device info: iOS=${isIOSDevice()}, UserAgent=${navigator.userAgent}`
+      );
 
       // Asset preloading function
       function preloadAsset(url, type) {
@@ -352,7 +362,11 @@
         });
       }
 
-      // Simple AR loader - reads manifest.json and creates AR experience
+      // ========================================
+      // MAIN APPLICATION FUNCTIONS
+      // ========================================
+      
+      // Main AR experience loader
       async function loadARExperience() {
         try {
           console.log("🚀 Starting AR experience...");
@@ -426,9 +440,11 @@
               if (overlay.url.mp4 || overlay.url.webm) {
                 // Simple video asset creation - no fallbacks for debugging
                 let finalUrl = overlay.url.mp4 || overlay.url.webm;
-                
-                console.log(`🎥 Creating video asset for ${overlay.id}: ${finalUrl}`);
-                
+
+                console.log(
+                  `🎥 Creating video asset for ${overlay.id}: ${finalUrl}`
+                );
+
                 // Create video element
                 assetEl = document.createElement("video");
                 assetEl.src = `${finalUrl}?v=${cacheBuster}`;
@@ -438,72 +454,40 @@
                 assetEl.setAttribute("playsinline", "true");
                 assetEl.setAttribute("crossorigin", "anonymous");
                 assetEl.setAttribute("preload", "metadata");
-                // Performance optimizations to reduce jitter
-                assetEl.setAttribute("webkit-playsinline", "true");
-                assetEl.setAttribute("x-webkit-airplay", "allow");
-                // Optimize video for tracking stability
-                assetEl.style.webkitTransform = "translate3d(0,0,0)"; // Force GPU acceleration
-                assetEl.style.transform = "translate3d(0,0,0)";
-                assetEl.style.webkitBackfaceVisibility = "hidden";
-                assetEl.style.backfaceVisibility = "hidden";
-                // Reduce video quality for better performance if needed
-                assetEl.setAttribute("poster", ""); // No poster image to reduce load
 
-                // Add video event listeners for debugging and optimization
-                assetEl.addEventListener("loadedmetadata", () => {
-                  console.log(`📹 Video metadata loaded: ${overlay.id}`);
-                  // Set video to lowest quality for better performance
-                  if (assetEl.videoTracks && assetEl.videoTracks.length > 0) {
-                    console.log(
-                      `🎬 Video track info:`,
-                      assetEl.videoWidth,
-                      "x",
-                      assetEl.videoHeight
-                    );
-                  }
-                });
+                // Simplified video event listeners
                 assetEl.addEventListener("loadeddata", () => {
-                  console.log(`✅ Video loaded successfully: ${overlay.id}`);
+                  console.log(`✅ Video loaded: ${overlay.id}`);
                 });
                 assetEl.addEventListener("canplay", () => {
-                  console.log(`🎬 Video can start playing: ${overlay.id}`);
-                  // Explicitly play the video when it's ready
-                  assetEl
-                    .play()
-                    .then(() => {
-                      console.log(`▶️ Video playing: ${overlay.id}`);
-                    })
-                    .catch((error) => {
-                      console.warn(
-                        `⚠️ Video autoplay prevented: ${overlay.id}`,
-                        error
-                      );
-                    });
+                  console.log(`🎬 Video ready: ${overlay.id}`);
+                  assetEl.play().catch(error => {
+                    console.warn(`⚠️ Autoplay prevented: ${overlay.id}`, error);
+                  });
                 });
                 assetEl.addEventListener("error", (e) => {
-                  console.error(`❌ Video error for ${overlay.id}:`, e);
-                });
-                assetEl.addEventListener("stalled", () => {
-                  console.warn(`⚠️ Video stalled: ${overlay.id}`);
+                  console.error(`❌ Video error: ${overlay.id}`, e);
                 });
               } else {
                 // Image asset creation
                 console.log(`🖼️ Creating image asset for ${overlay.id}`);
                 assetEl = document.createElement("img");
                 const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
+                
                 if (!imageUrl) {
-                  console.warn(`⚠️ No supported image format for overlay: ${overlay.id}`);
+                  console.warn(`⚠️ No supported image format for: ${overlay.id}`);
                   return;
                 }
+                
                 assetEl.src = `${imageUrl}?v=${cacheBuster}`;
                 assetEl.setAttribute("crossorigin", "anonymous");
                 
                 // Image event listeners
                 assetEl.addEventListener("load", () => {
-                  console.log(`✅ Image loaded successfully: ${overlay.id}`);
+                  console.log(`✅ Image loaded: ${overlay.id}`);
                 });
                 assetEl.addEventListener("error", (e) => {
-                  console.error(`❌ Image error for ${overlay.id}:`, e);
+                  console.error(`❌ Image error: ${overlay.id}`, e);
                 });
               }
 
@@ -511,7 +495,9 @@
               assetsEl.appendChild(assetEl);
 
               // Simple AR element creation - no complex fallbacks for debugging
-              const mediaEl = document.createElement(overlay.url.mp4 || overlay.url.webm ? "a-video" : "a-image");
+              const mediaEl = document.createElement(
+                overlay.url.mp4 || overlay.url.webm ? "a-video" : "a-image"
+              );
               mediaEl.setAttribute("id", overlay.id);
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
@@ -520,13 +506,21 @@
 
               if (overlay.url.mp4 || overlay.url.webm) {
                 // Video element with basic transparency
-                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.1; shader: flat`);
+                mediaEl.setAttribute(
+                  "material",
+                  `transparent: true; opacity: ${
+                    overlay.opacity || 1.0
+                  }; alphaTest: 0.1; shader: flat`
+                );
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
                 console.log(`� Creating video element for ${overlay.id}`);
               } else {
                 // Image element
-                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                mediaEl.setAttribute(
+                  "material",
+                  `transparent: true; opacity: ${overlay.opacity || 1.0}`
+                );
                 console.log(`🖼️ Creating image element for ${overlay.id}`);
               }
 
@@ -540,23 +534,18 @@
             }
           });
 
-          // Wait a moment for A-Frame to initialize
+          // Initialize AR experience after brief delay
           setTimeout(() => {
             loadingEl.classList.add("hidden");
             console.log("✅ AR experience ready!");
 
-            // Ensure all videos are playing
+            // Start any paused videos
             const videos = document.querySelectorAll("video");
             videos.forEach((video) => {
               if (video.paused) {
-                video
-                  .play()
-                  .then(() => {
-                    console.log("🔄 Started paused video:", video.id);
-                  })
-                  .catch((error) => {
-                    console.warn("⚠️ Could not start video:", video.id, error);
-                  });
+                video.play().catch(error => {
+                  console.warn("⚠️ Could not start video:", video.id, error);
+                });
               }
             });
           }, 1000);
@@ -595,62 +584,16 @@
             }
           }
 
-          // Start MindAR
-          const arSystem =
-            document.querySelector("a-scene").systems["mindar-image-system"];
+          // Start MindAR system
+          const arScene = document.querySelector("a-scene");
+          const arSystem = arScene.components["mindar-image-system"];
           if (arSystem) {
             await arSystem.start();
-            console.log("🎯 MindAR started successfully");
+            console.log("� MindAR started successfully");
           }
 
           // Load AR content
           await loadARExperience();
-
-          // Start background water sound (iOS compatible with extensive error handling)
-          try {
-            const waterAudio = document.getElementById("water-audio");
-            if (waterAudio) {
-              // iOS-specific preparation
-              waterAudio.muted = false;
-              waterAudio.volume = 0.3;
-              waterAudio.loop = true;
-
-              // Load the audio first
-              waterAudio.load();
-
-              // Wait for audio to be ready
-              const tryPlayAudio = () => {
-                if (waterAudio.readyState >= 2) {
-                  // HAVE_CURRENT_DATA
-                  const playPromise = waterAudio.play();
-                  if (playPromise !== undefined) {
-                    playPromise
-                      .then(() => {
-                        console.log("🌊 Water sound started successfully");
-                      })
-                      .catch((error) => {
-                        console.log(
-                          "ℹ️ Audio blocked by browser policy (this is normal):",
-                          error.name
-                        );
-                        // Don't retry automatically - just log it's blocked
-                      });
-                  }
-                } else {
-                  // Wait for audio to load
-                  setTimeout(tryPlayAudio, 500);
-                }
-              };
-
-              // Start trying to play
-              tryPlayAudio();
-            }
-          } catch (audioError) {
-            console.log(
-              "ℹ️ Audio not available (this is fine):",
-              audioError.name
-            );
-          }
         } catch (error) {
           console.error("❌ Failed to start AR:", error);
           document.getElementById("loading").classList.add("hidden");
