@@ -273,50 +273,65 @@
         `🔍 Device info: iOS=${isIOSDevice()}, UserAgent=${navigator.userAgent}`
       );
 
-      // Asset preloading function
+      // Asset preloading function with iOS compatibility
       function preloadAsset(url, type) {
         return new Promise((resolve, reject) => {
           const cacheBuster = Date.now();
           const fullUrl = `${url}?v=${cacheBuster}`;
+          const isIOS = isIOSDevice();
+
+          // Set timeout to avoid hanging on iOS
+          const timeout = setTimeout(() => {
+            console.warn(`⏰ Preload timeout for ${type}: ${url}`);
+            resolve(null); // Resolve with null instead of rejecting
+          }, isIOS ? 5000 : 10000); // Shorter timeout on iOS
 
           if (type === "video") {
             const video = document.createElement("video");
-            video.preload = "auto";
+            video.preload = isIOS ? "metadata" : "auto"; // Less aggressive preload on iOS
             video.muted = true;
             video.crossOrigin = "anonymous";
+            video.playsInline = true; // Essential for iOS
 
             const onLoaded = () => {
+              clearTimeout(timeout);
               console.log(`✅ Preloaded video: ${url}`);
               resolve(video);
             };
 
             const onError = (e) => {
-              console.error(`❌ Failed to preload video: ${url}`, e);
-              reject(e);
+              clearTimeout(timeout);
+              console.warn(`⚠️ Video preload failed (continuing): ${url}`, e);
+              resolve(null); // Continue instead of failing
             };
 
-            video.addEventListener("loadeddata", onLoaded);
-            video.addEventListener("canplaythrough", onLoaded);
+            // Use single event listener for iOS compatibility
+            if (isIOS) {
+              video.addEventListener("loadedmetadata", onLoaded);
+            } else {
+              video.addEventListener("loadeddata", onLoaded);
+            }
             video.addEventListener("error", onError);
 
             video.src = fullUrl;
           } else if (type === "audio") {
             const audio = document.createElement("audio");
-            audio.preload = "auto";
+            audio.preload = isIOS ? "metadata" : "auto";
             audio.crossOrigin = "anonymous";
 
             const onLoaded = () => {
+              clearTimeout(timeout);
               console.log(`✅ Preloaded audio: ${url}`);
               resolve(audio);
             };
 
             const onError = (e) => {
-              console.error(`❌ Failed to preload audio: ${url}`, e);
-              reject(e);
+              clearTimeout(timeout);
+              console.warn(`⚠️ Audio preload failed (continuing): ${url}`, e);
+              resolve(null);
             };
 
-            audio.addEventListener("loadeddata", onLoaded);
-            audio.addEventListener("canplaythrough", onLoaded);
+            audio.addEventListener("loadedmetadata", onLoaded);
             audio.addEventListener("error", onError);
 
             audio.src = fullUrl;
@@ -326,13 +341,15 @@
             img.crossOrigin = "anonymous";
 
             img.onload = () => {
+              clearTimeout(timeout);
               console.log(`✅ Preloaded image: ${url}`);
               resolve(img);
             };
 
             img.onerror = (e) => {
-              console.error(`❌ Failed to preload image: ${url}`, e);
-              reject(e);
+              clearTimeout(timeout);
+              console.warn(`⚠️ Image preload failed (continuing): ${url}`, e);
+              resolve(null);
             };
 
             img.src = fullUrl;
@@ -373,8 +390,10 @@
           loadingEl.innerHTML =
             "<h3>Loading AR Experience...</h3><p>Preloading assets...</p>";
 
-          // Preload all assets first - simplified version for debugging
+          // Preload all assets with iOS-friendly approach
           console.log("📦 Preloading all assets...");
+          const isIOS = isIOSDevice();
+          
           const preloadPromises = manifest.overlays
             .map(async (overlay) => {
               if (overlay.url.mp4 || overlay.url.webm) {
@@ -395,9 +414,24 @@
             })
             .filter(Boolean);
 
-          // Wait for all assets to be preloaded
-          await Promise.all(preloadPromises);
-          console.log("✅ All assets preloaded successfully!");
+          // Wait for all assets with global timeout for iOS
+          try {
+            if (isIOS) {
+              // Shorter timeout for iOS to prevent hanging
+              await Promise.race([
+                Promise.all(preloadPromises),
+                new Promise(resolve => setTimeout(() => {
+                  console.log("📱 iOS: Continuing with partial asset loading...");
+                  resolve();
+                }, 8000))
+              ]);
+            } else {
+              await Promise.all(preloadPromises);
+            }
+            console.log("✅ Asset preloading completed!");
+          } catch (error) {
+            console.warn("⚠️ Some assets failed to preload, continuing...", error);
+          }
 
           // Update loading text
           loadingEl.innerHTML =
