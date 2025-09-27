@@ -4,22 +4,57 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, user-scalable=no, s      // iOS detection function for optimal video format serving
+      content="width=device-width, initial-scale=1, user-scalable=no, s      // iOS detection function for optimal format serving
       function isIOSDevice() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       }
 
-      // Function to get appropriate video format for current device
-      function getVideoUrl(webmUrl) {
+      // Function to get appropriate format for current device with APNG fallback
+      function getOptimalUrl(webmUrl) {
         if (isIOSDevice()) {
-          // For iOS devices, try HEVC format first (with native alpha)
+          // For iOS: Try HEVC first, then APNG fallback, then WebM as last resort
           const hevcUrl = webmUrl.replace('.webm', '_hevc.mov').replace('.WEBM', '_hevc.mov');
-          console.log(`📱 iOS detected - trying HEVC format: ${hevcUrl}`);
-          return hevcUrl;
+          const apngUrl = webmUrl.replace('.webm', '_optimized.apng').replace('.WEBM', '_optimized.apng');
+          
+          console.log(`📱 iOS detected - Primary: ${hevcUrl}, Fallback: ${apngUrl}`);
+          return { primary: hevcUrl, fallback: apngUrl, webm: webmUrl };
         } else {
           // For other devices, use WebM format
           console.log(`💻 Non-iOS device - using WebM format: ${webmUrl}`);
-          return webmUrl;
+          return { primary: webmUrl, fallback: null, webm: webmUrl };
+        }
+      }
+
+      // Enhanced asset preloading with fallback support
+      async function preloadAssetWithFallback(urls, type) {
+        // Try primary format first
+        try {
+          await preloadAsset(urls.primary, type);
+          console.log(`✅ Primary format loaded: ${urls.primary}`);
+          return urls.primary;
+        } catch (error) {
+          console.log(`❌ Primary format failed: ${error.message}`);
+          
+          // Try fallback format if available
+          if (urls.fallback) {
+            try {
+              await preloadAsset(urls.fallback, type === 'video' ? 'image' : type);
+              console.log(`✅ Fallback format loaded: ${urls.fallback}`);
+              return urls.fallback;
+            } catch (fallbackError) {
+              console.log(`❌ Fallback format failed: ${fallbackError.message}`);
+            }
+          }
+          
+          // Last resort: try WebM
+          try {
+            await preloadAsset(urls.webm, type);
+            console.log(`✅ WebM fallback loaded: ${urls.webm}`);
+            return urls.webm;
+          } catch (webmError) {
+            console.error(`❌ All formats failed for asset`);
+            throw webmError;
+          }
         }
       }
 
@@ -408,17 +443,22 @@
           loadingEl.innerHTML =
             "<h3>Loading AR Experience...</h3><p>Preloading assets...</p>";
 
-          // Preload all assets first
-          console.log("📦 Preloading all assets...");
+          // Preload all assets first with fallback support
+          console.log("📦 Preloading all assets with fallback support...");
           const preloadPromises = manifest.overlays
-            .map((overlay) => {
+            .map(async (overlay) => {
               if (overlay.url.mp4 || overlay.url.webm) {
-                let videoUrl = overlay.url.mp4 || overlay.url.webm;
-                // Use appropriate video format for current device
+                let baseVideoUrl = overlay.url.mp4 || overlay.url.webm;
+                // Get optimal URLs with fallback support
                 if (overlay.url.webm) {
-                  videoUrl = getVideoUrl(overlay.url.webm);
+                  const urls = getOptimalUrl(overlay.url.webm);
+                  const loadedUrl = await preloadAssetWithFallback(urls, "video");
+                  // Store the actually loaded URL for later use
+                  overlay._loadedUrl = loadedUrl;
+                  return loadedUrl;
+                } else {
+                  return preloadAsset(baseVideoUrl, "video");
                 }
-                return preloadAsset(videoUrl, "video");
               } else {
                 const imageUrl =
                   overlay.url.png ||
@@ -453,20 +493,37 @@
               const assetId = `asset-${overlay.id}`;
 
               if (overlay.url.mp4 || overlay.url.webm) {
-                // Video asset with cache busting
-                assetEl = document.createElement("video");
-                let videoUrl = overlay.url.mp4 || overlay.url.webm;
-                // Use appropriate video format for current device
-                if (overlay.url.webm) {
-                  videoUrl = getVideoUrl(overlay.url.webm);
+                // Video asset with optimal format and fallback support
+                let finalUrl = overlay.url.mp4 || overlay.url.webm;
+                let isAPNG = false;
+                
+                // Use the actually loaded URL from preloading if available
+                if (overlay._loadedUrl) {
+                  finalUrl = overlay._loadedUrl;
+                  isAPNG = finalUrl.includes('.apng') || finalUrl.includes('_optimized.apng');
+                } else if (overlay.url.webm) {
+                  const urls = getOptimalUrl(overlay.url.webm);
+                  finalUrl = urls.primary;
                 }
-                assetEl.src = `${videoUrl}?v=${cacheBuster}`;
-                assetEl.setAttribute("autoplay", "true");
-                assetEl.setAttribute("loop", "true");
-                assetEl.setAttribute("muted", "true");
-                assetEl.setAttribute("playsinline", "true");
-                assetEl.setAttribute("crossorigin", "anonymous");
-                assetEl.setAttribute("preload", "metadata"); // Changed from 'auto' to reduce memory
+                
+                if (isAPNG) {
+                  // Create image element for APNG
+                  assetEl = document.createElement("img");
+                  assetEl.src = `${finalUrl}?v=${cacheBuster}`;
+                  assetEl.setAttribute("crossorigin", "anonymous");
+                  console.log(`📷 Using APNG format for ${overlay.id}: ${finalUrl}`);
+                } else {
+                  // Create video element for video formats
+                  assetEl = document.createElement("video");
+                  assetEl.src = `${finalUrl}?v=${cacheBuster}`;
+                  assetEl.setAttribute("autoplay", "true");
+                  assetEl.setAttribute("loop", "true");
+                  assetEl.setAttribute("muted", "true");
+                  assetEl.setAttribute("playsinline", "true");
+                  assetEl.setAttribute("crossorigin", "anonymous");
+                  assetEl.setAttribute("preload", "metadata");
+                  console.log(`🎬 Using video format for ${overlay.id}: ${finalUrl}`);
+                }
                 // Performance optimizations to reduce jitter
                 assetEl.setAttribute("webkit-playsinline", "true");
                 assetEl.setAttribute("x-webkit-airplay", "allow");
@@ -515,37 +572,25 @@
                 assetEl.addEventListener("stalled", () => {
                   console.warn(`⚠️ Video stalled: ${overlay.id}`);
                 });
-              } else {
-                // Image asset (supports png, jpg, gif, webp) with cache busting
-                assetEl = document.createElement("img");
-                const imageUrl =
-                  overlay.url.png ||
-                  overlay.url.jpg ||
-                  overlay.url.gif ||
-                  overlay.url.webp;
-                if (!imageUrl) {
-                  console.warn(
-                    `⚠️ No supported image format for overlay: ${overlay.id}`
-                  );
-                  return;
-                }
-                assetEl.src = `${imageUrl}?v=${cacheBuster}`;
-                assetEl.setAttribute("crossorigin", "anonymous");
               }
 
               assetEl.id = assetId;
               assetsEl.appendChild(assetEl);
 
+              // Determine element type based on final chosen URL
+              const isAPNG = finalUrl.includes('.apng') || finalUrl.includes('_optimized.apng');
+              const isVideo = !isAPNG && (overlay.url.mp4 || overlay.url.webm);
+              
               // Create AR element
-              const mediaEl = document.createElement(
-                overlay.url.mp4 || overlay.url.webm ? "a-video" : "a-image"
-              );
+              const mediaEl = document.createElement(isVideo ? "a-video" : "a-image");
               mediaEl.setAttribute("id", overlay.id);
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
+              mediaEl.setAttribute("geometry", "primitive: plane");
 
-              if (overlay.url.mp4 || overlay.url.webm) {
+              if (isVideo) {
+                console.log(`🎥 Creating video element for ${overlay.id} with ${finalUrl}`);
                 // Video-specific material setup with transparency
                 mediaEl.setAttribute(
                   "material",
@@ -553,7 +598,6 @@
                     overlay.opacity || 1.0
                   }; alphaTest: 0.1; shader: flat`
                 );
-                mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
                 
@@ -564,7 +608,7 @@
                 // Enhanced transparency handling for different devices
                 if (isIOS) {
                   // iOS with HEVC: Try native transparency first, fall back to minimal chroma key if needed
-                  const isHEVC = overlay.url.webm && videoUrl.includes('_hevc.mov');
+                  const isHEVC = finalUrl.includes('_hevc.mov');
                   if (isHEVC) {
                     console.log(`🍎 iOS with HEVC: Using native transparency for ${overlay.id}`);
                     // Set material properties for native HEVC alpha
@@ -586,8 +630,18 @@
                   // Non-iOS devices: use native WebM transparency
                   console.log(`🌐 Non-iOS: Using native WebM transparency for ${overlay.id}`);
                 }
+              } else if (isAPNG) {
+                console.log(`🖼️ Creating APNG image element for ${overlay.id} with ${finalUrl}`);
+                // APNG-specific material setup with transparency
+                mediaEl.setAttribute(
+                  "material",
+                  `transparent: true; opacity: ${
+                    overlay.opacity || 1.0
+                  }; alphaTest: 0.1; shader: flat`
+                );
               } else {
-                // Image material setup
+                console.log(`🖼️ Creating static image element for ${overlay.id} with ${finalUrl}`);
+                // Regular image material setup
                 mediaEl.setAttribute(
                   "material",
                   `transparent: true; opacity: ${overlay.opacity || 1.0}`
