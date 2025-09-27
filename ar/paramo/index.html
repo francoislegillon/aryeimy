@@ -15,20 +15,8 @@
     <meta http-equiv="Expires" content="0" />
     <!-- Mobile app capabilities -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#000000" />          // MindAR will auto-start, just wait for scene to be ready
-          const arScene = document.querySelector("a-scene");
-          
-          // Wait for scene to be loaded
-          await new Promise((resolve) => {
-            if (arScene.hasLoaded) {
-              resolve();
-            } else {
-              arScene.addEventListener('loaded', resolve, { once: true });
-            }
-          });
-          
-          console.log("✅ A-Frame scene loaded, MindAR should auto-start");
-          console.log("🔍 Available components:", Object.keys(arScene.components));-- Camera permissions hint -->
+    <meta name="theme-color" content="#000000" />
+    <!-- Camera permissions hint -->
     <meta http-equiv="Permissions-Policy" content="camera=*" />
     <title>Paramo - AR Experience</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
@@ -105,8 +93,6 @@
         border-radius: 15px;
         font-size: 12px;
       }
-
-
       /* Hide MindAR default UI elements */
       .mindar-ui-loading,
       .mindar-ui-scanning,
@@ -550,53 +536,9 @@
         }
       }
 
-      // Start AR function with Android compatibility
-      async function startAR() {
-        try {
-          console.log("🤖 Starting AR for Android...");
-
-          // Show loading
-          document.getElementById("loading").classList.remove("hidden");
-
-          // Check camera permissions
-          if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            try {
-              // Request camera permission explicitly
-              const stream = await navigator.mediaDevices.getUserMedia({
-                video: true,
-              });
-              console.log("📹 Camera permission granted");
-              // Stop the stream immediately, MindAR will handle it
-              stream.getTracks().forEach((track) => track.stop());
-            } catch (permError) {
-              throw new Error(
-                "Camera permission denied. Please enable camera access and refresh."
-              );
-            }
-          }
-
-          // Start MindAR system
-          const arScene = document.querySelector("a-scene");
-          const arSystem = arScene.components["mindar-image-system"];
-          if (arSystem) {
-            await arSystem.start();
-            console.log("� MindAR started successfully");
-          }
-
-          // Load AR content
-          await loadARExperience();
-        } catch (error) {
-          console.error("❌ Failed to start AR:", error);
-          document.getElementById("loading").classList.add("hidden");
-          const errorEl = document.getElementById("error");
-          errorEl.textContent = `Error: ${error.message}`;
-          errorEl.classList.remove("hidden");
-        }
-      }
-
-      // Auto-start when page loads
+      // Auto-start AR when page loads
       document.addEventListener("DOMContentLoaded", () => {
-        console.log("📱 DOM loaded, camera will auto-start...");
+        console.log("📱 DOM loaded, initializing AR...");
 
         // Add cache busting to target.mind file
         const scene = document.querySelector("a-scene");
@@ -607,23 +549,27 @@
           `./target.mind?v=${cacheBuster}`
         );
         scene.setAttribute("mindar-image", updatedSrc);
-        console.log("🎯 Updated target with cache buster");
+        console.log("🎯 Target updated with cache buster");
 
         // Show loading immediately since autoStart is true
         document.getElementById("loading").classList.remove("hidden");
 
-        // Wait for MindAR to initialize, then load AR content
-        scene.addEventListener('arReady', async () => {
-          console.log("🎯 MindAR is ready, loading AR experience...");
-          await loadARExperience();
-        }, { once: true });
-
-        // Fallback: if arReady doesn't fire, wait for scene loaded event
+        // Wait for scene to load, then load AR content
         scene.addEventListener('loaded', async () => {
-          console.log("🎬 Scene loaded, loading AR experience...");
+          console.log("🎬 Scene loaded, loading AR content...");
+          
+          // Small delay to ensure MindAR is initialized
           setTimeout(async () => {
-            await loadARExperience();
-          }, 1000);
+            try {
+              await loadARExperience();
+            } catch (error) {
+              console.error("❌ Failed to load AR:", error);
+              document.getElementById("loading").classList.add("hidden");
+              const errorEl = document.getElementById("error");
+              errorEl.textContent = `Error: ${error.message}`;
+              errorEl.classList.remove("hidden");
+            }
+          }, 2000);
         }, { once: true });
       });
     </script>
