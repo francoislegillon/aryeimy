@@ -172,6 +172,28 @@
     </div>
 
     <script>
+      // iOS detection function for dual-format video serving
+      function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      }
+
+      // Function to get appropriate video format for current device
+      function getVideoUrl(webmUrl) {
+        if (isIOSDevice()) {
+          // For iOS devices, use HEVC format with native alpha channel support
+          const hevcUrl = webmUrl.replace('.webm', '_hevc.mov').replace('.WEBM', '_hevc.mov');
+          console.log(`📱 iOS detected - using HEVC format: ${hevcUrl}`);
+          return hevcUrl;
+        } else {
+          // For other devices, use WebM format
+          console.log(`💻 Non-iOS device - using WebM format: ${webmUrl}`);
+          return webmUrl;
+        }
+      }
+
+      // Log device detection results
+      console.log(`Device detection: iOS = ${isIOSDevice()}, UserAgent = ${navigator.userAgent}`);
+
       // Chroma key component for video transparency
       AFRAME.registerComponent("chroma-key", {
         schema: {
@@ -377,7 +399,11 @@
           const preloadPromises = manifest.overlays
             .map((overlay) => {
               if (overlay.url.mp4 || overlay.url.webm) {
-                const videoUrl = overlay.url.mp4 || overlay.url.webm;
+                let videoUrl = overlay.url.mp4 || overlay.url.webm;
+                // Use appropriate video format for current device
+                if (overlay.url.webm) {
+                  videoUrl = getVideoUrl(overlay.url.webm);
+                }
                 return preloadAsset(videoUrl, "video");
               } else {
                 const imageUrl =
@@ -415,7 +441,11 @@
               if (overlay.url.mp4 || overlay.url.webm) {
                 // Video asset with cache busting
                 assetEl = document.createElement("video");
-                const videoUrl = overlay.url.mp4 || overlay.url.webm;
+                let videoUrl = overlay.url.mp4 || overlay.url.webm;
+                // Use appropriate video format for current device
+                if (overlay.url.webm) {
+                  videoUrl = getVideoUrl(overlay.url.webm);
+                }
                 assetEl.src = `${videoUrl}?v=${cacheBuster}`;
                 assetEl.setAttribute("autoplay", "true");
                 assetEl.setAttribute("loop", "true");
@@ -513,19 +543,18 @@
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
                 
-                // iOS/iPhone detection for chroma key compatibility
+                // iOS/iPhone detection for transparency handling
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
                 
-                // Apply chroma key only on iOS devices for transparency compatibility
+                // For iOS devices: use native HEVC transparency (no chroma key needed)
+                // For other devices: use WebM with chroma key fallback if needed
                 if (isIOS) {
-                  mediaEl.setAttribute(
-                    "chroma-key",
-                    "color: #000000; threshold: 0.3; smoothing: 0.05"
-                  );
-                  console.log(`🍎 iOS detected: Applying chroma key to ${overlay.id}`);
+                  // iOS with HEVC has native alpha channel support - no chroma key needed
+                  console.log(`🍎 iOS detected: Using native HEVC transparency for ${overlay.id}`);
                 } else {
-                  console.log(`🌐 Non-iOS: Using native transparency for ${overlay.id}`);
+                  // Non-iOS devices can use WebM native transparency
+                  console.log(`🌐 Non-iOS: Using native WebM transparency for ${overlay.id}`);
                 }
               } else {
                 // Image material setup
