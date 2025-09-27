@@ -15,8 +15,20 @@
     <meta http-equiv="Expires" content="0" />
     <!-- Mobile app capabilities -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#000000" />
-    <!-- Camera permissions hint -->
+    <meta name="theme-color" content="#000000" />          // MindAR will auto-start, just wait for scene to be ready
+          const arScene = document.querySelector("a-scene");
+          
+          // Wait for scene to be loaded
+          await new Promise((resolve) => {
+            if (arScene.hasLoaded) {
+              resolve();
+            } else {
+              arScene.addEventListener('loaded', resolve, { once: true });
+            }
+          });
+          
+          console.log("✅ A-Frame scene loaded, MindAR should auto-start");
+          console.log("🔍 Available components:", Object.keys(arScene.components));-- Camera permissions hint -->
     <meta http-equiv="Permissions-Policy" content="camera=*" />
     <title>Paramo - AR Experience</title>
     <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
@@ -93,25 +105,7 @@
         border-radius: 15px;
         font-size: 12px;
       }
-      .start-button {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #4caf50;
-        color: white;
-        border: none;
-        padding: 15px 30px;
-        border-radius: 25px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 1000;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      }
-      .start-button:hover {
-        background: #45a049;
-      }
+
 
       /* Hide MindAR default UI elements */
       .mindar-ui-loading,
@@ -127,8 +121,6 @@
       <p>Point your camera at the target image</p>
     </div>
 
-    <button id="start-button" class="start-button">Start AR Experience</button>
-
     <div id="error" class="error hidden"></div>
 
     <!-- Background water audio for iOS compatibility -->
@@ -139,7 +131,7 @@
 
     <a-scene
       id="ar-scene"
-      mindar-image="imageTargetSrc: ./target.mind; autoStart: false; uiLoading: yes; uiScanning: yes; uiError: yes; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
+      mindar-image="imageTargetSrc: ./target.mind; autoStart: true; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.0001; filterBeta: 0.01; warmupTolerance: 5; missTolerance: 5"
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
       renderer="alpha: true; antialias: true; colorManagement: true; physicallyCorrectLights: true; precision: highp; powerPreference: high-performance"
@@ -604,9 +596,9 @@
         }
       }
 
-      // Start when page loads
+      // Auto-start when page loads
       document.addEventListener("DOMContentLoaded", () => {
-        console.log("📱 DOM loaded, setting up start button...");
+        console.log("📱 DOM loaded, camera will auto-start...");
 
         // Add cache busting to target.mind file
         const scene = document.querySelector("a-scene");
@@ -619,9 +611,22 @@
         scene.setAttribute("mindar-image", updatedSrc);
         console.log("🎯 Updated target with cache buster");
 
-        document
-          .getElementById("start-button")
-          .addEventListener("click", startAR);
+        // Show loading immediately since autoStart is true
+        document.getElementById("loading").classList.remove("hidden");
+
+        // Wait for MindAR to initialize, then load AR content
+        scene.addEventListener('arReady', async () => {
+          console.log("🎯 MindAR is ready, loading AR experience...");
+          await loadARExperience();
+        }, { once: true });
+
+        // Fallback: if arReady doesn't fire, wait for scene loaded event
+        scene.addEventListener('loaded', async () => {
+          console.log("🎬 Scene loaded, loading AR experience...");
+          setTimeout(async () => {
+            await loadARExperience();
+          }, 1000);
+        }, { once: true });
       });
     </script>
   </body>
