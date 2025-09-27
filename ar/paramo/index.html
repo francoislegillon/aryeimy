@@ -32,7 +32,7 @@
         transform: translateZ(0);
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
-        
+
         /* === USER INTERACTION PREVENTION === */
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -155,7 +155,7 @@
       // ========================================
       // A-FRAME COMPONENTS
       // ========================================
-      
+
       // Chroma key component for video transparency
       AFRAME.registerComponent("chroma-key", {
         schema: {
@@ -263,7 +263,7 @@
       // ========================================
       // UTILITY FUNCTIONS
       // ========================================
-      
+
       function isIOSDevice() {
         return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
       }
@@ -360,7 +360,7 @@
       // ========================================
       // MAIN APPLICATION FUNCTIONS
       // ========================================
-      
+
       // Main AR experience loader
       async function loadARExperience() {
         try {
@@ -393,7 +393,7 @@
           // Preload all assets with iOS-friendly approach
           console.log("📦 Preloading all assets...");
           const isIOS = isIOSDevice();
-          
+
           const preloadPromises = manifest.overlays
             .map(async (overlay) => {
               if (overlay.url.mp4 || overlay.url.webm) {
@@ -485,15 +485,15 @@
                 console.log(`🖼️ Creating image asset for ${overlay.id}`);
                 assetEl = document.createElement("img");
                 const imageUrl = overlay.url.png || overlay.url.jpg || overlay.url.gif || overlay.url.webp;
-                
+
                 if (!imageUrl) {
                   console.warn(`⚠️ No supported image format for: ${overlay.id}`);
                   return;
                 }
-                
+
                 assetEl.src = `${imageUrl}?v=${cacheBuster}`;
                 assetEl.setAttribute("crossorigin", "anonymous");
-                
+
                 // Image event listeners
                 assetEl.addEventListener("load", () => {
                   console.log(`✅ Image loaded: ${overlay.id}`);
@@ -520,10 +520,10 @@
                 // Check if this video needs chroma key
                 const isGreenChroma = overlay.id === "title-video" || overlay.id === "bush-video";
                 const isBlueChroma = overlay.id === "clouds-video";
-                
+
                 if (isGreenChroma) {
                   // Video with green chroma key transparency - bush gets precise threshold
-                  const threshold = overlay.id === "bush-video" ? "0.1" : "0.4";
+                  const threshold = overlay.id === "bush-video" ? "0.2" : "0.4";
                   console.log(`🎬 Creating green chroma key video element for ${overlay.id} with threshold: ${threshold}`);
                   mediaEl.setAttribute(
                     "material",
@@ -624,7 +624,7 @@
         // Wait for scene to load, then load AR content
         scene.addEventListener('loaded', async () => {
           console.log("🎬 Scene loaded, loading AR content...");
-          
+
           // Small delay to ensure MindAR is initialized
           setTimeout(async () => {
             try {
