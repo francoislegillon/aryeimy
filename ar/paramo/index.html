@@ -512,11 +512,13 @@
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                // Add chroma key component for transparency - more aggressive black removal
-                mediaEl.setAttribute(
-                  "chroma-key",
-                  "color: #000000; threshold: 0.3; smoothing: 0.05"
-                );
+                // Add chroma key component for transparency - skip for bush video as it has native transparency
+                if (overlay.id !== "bush-video") {
+                  mediaEl.setAttribute(
+                    "chroma-key",
+                    "color: #000000; threshold: 0.3; smoothing: 0.05"
+                  );
+                }
               } else {
                 // Image material setup
                 mediaEl.setAttribute(

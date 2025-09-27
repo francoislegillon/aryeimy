@@ -80,9 +80,9 @@
       "loop": true
     },
     {
-      "id": "frailejones-video",
+      "id": "bush-video",
       "url": {
-        "webm": "assets/frailejones_comp.webm"
+        "webm": "assets/BUSH.webm"
       },
       "zIndex": 5,
       "position": [
