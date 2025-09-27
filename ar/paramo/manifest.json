@@ -44,7 +44,7 @@
     {
       "id": "title-video",
       "url": {
-        "webm": "assets/paramo_optimized.webm"
+        "webm": "assets/PARAMOTITLE.WEBM"
       },
       "zIndex": 3,
       "position": [
@@ -63,7 +63,7 @@
     {
       "id": "clouds-video",
       "url": {
-        "webm": "assets/clouds_compatible.webm"
+        "webm": "assets/CLOUDS.WEBM"
       },
       "zIndex": 4,
       "position": [
