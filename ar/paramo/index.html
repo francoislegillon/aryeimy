@@ -512,12 +512,20 @@
                 mediaEl.setAttribute("geometry", "primitive: plane");
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                // Add chroma key component for transparency - skip for bush video as it has native transparency
-                if (overlay.id !== "bush-video") {
+                
+                // iOS/iPhone detection for chroma key compatibility
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                
+                // Apply chroma key only on iOS devices for transparency compatibility
+                if (isIOS) {
                   mediaEl.setAttribute(
                     "chroma-key",
                     "color: #000000; threshold: 0.3; smoothing: 0.05"
                   );
+                  console.log(`🍎 iOS detected: Applying chroma key to ${overlay.id}`);
+                } else {
+                  console.log(`🌐 Non-iOS: Using native transparency for ${overlay.id}`);
                 }
               } else {
                 // Image material setup
