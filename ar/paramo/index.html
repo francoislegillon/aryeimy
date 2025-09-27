@@ -347,6 +347,32 @@
         },
       });
 
+      // Get optimal URL with multi-format fallback support
+      function getOptimalUrl(webmUrl) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        
+        if (isIOS) {
+          // iOS: Try HEVC first, then APNG fallback, then WebM
+          const baseUrl = webmUrl.replace('.webm', '');
+          const hevcUrl = `${baseUrl}_hevc.mov`;
+          const apngUrl = `${baseUrl}_optimized.apng`;
+          
+          return {
+            primary: hevcUrl,
+            fallback: apngUrl,
+            tertiary: webmUrl
+          };
+        } else {
+          // Desktop/Android: Use WebM directly
+          return {
+            primary: webmUrl,
+            fallback: webmUrl,
+            tertiary: webmUrl
+          };
+        }
+      }
+
       // Asset preloading function
       function preloadAsset(url, type) {
         return new Promise((resolve, reject) => {
