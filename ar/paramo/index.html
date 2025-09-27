@@ -446,22 +446,14 @@
           loadingEl.innerHTML =
             "<h3>Loading AR Experience...</h3><p>Preloading assets...</p>";
 
-          // Preload all assets first with fallback support
-          console.log("📦 Preloading all assets with fallback support...");
+          // Preload all assets first - simplified version for debugging
+          console.log("📦 Preloading all assets...");
           const preloadPromises = manifest.overlays
             .map(async (overlay) => {
               if (overlay.url.mp4 || overlay.url.webm) {
                 let baseVideoUrl = overlay.url.mp4 || overlay.url.webm;
-                // Get optimal URLs with fallback support
-                if (overlay.url.webm) {
-                  const urls = getOptimalUrl(overlay.url.webm);
-                  const loadedUrl = await preloadAssetWithFallback(urls, "video");
-                  // Store the actually loaded URL for later use
-                  overlay._loadedUrl = loadedUrl;
-                  return loadedUrl;
-                } else {
-                  return preloadAsset(baseVideoUrl, "video");
-                }
+                console.log(`🎥 Preloading video: ${baseVideoUrl}`);
+                return preloadAsset(baseVideoUrl, "video");
               } else {
                 const imageUrl =
                   overlay.url.png ||
@@ -469,6 +461,7 @@
                   overlay.url.gif ||
                   overlay.url.webp;
                 if (imageUrl) {
+                  console.log(`🖼️ Preloading image: ${imageUrl}`);
                   return preloadAsset(imageUrl, "image");
                 }
               }
@@ -496,37 +489,20 @@
               const assetId = `asset-${overlay.id}`;
 
               if (overlay.url.mp4 || overlay.url.webm) {
-                // Video asset with optimal format and fallback support
+                // Simple video asset creation - no fallbacks for debugging
                 let finalUrl = overlay.url.mp4 || overlay.url.webm;
-                let isAPNG = false;
                 
-                // Use the actually loaded URL from preloading if available
-                if (overlay._loadedUrl) {
-                  finalUrl = overlay._loadedUrl;
-                  isAPNG = finalUrl.includes('.apng') || finalUrl.includes('_optimized.apng');
-                } else if (overlay.url.webm) {
-                  const urls = getOptimalUrl(overlay.url.webm);
-                  finalUrl = urls.primary;
-                }
+                console.log(`🎥 Creating video asset for ${overlay.id}: ${finalUrl}`);
                 
-                if (isAPNG) {
-                  // Create image element for APNG
-                  assetEl = document.createElement("img");
-                  assetEl.src = `${finalUrl}?v=${cacheBuster}`;
-                  assetEl.setAttribute("crossorigin", "anonymous");
-                  console.log(`📷 Using APNG format for ${overlay.id}: ${finalUrl}`);
-                } else {
-                  // Create video element for video formats
-                  assetEl = document.createElement("video");
-                  assetEl.src = `${finalUrl}?v=${cacheBuster}`;
-                  assetEl.setAttribute("autoplay", "true");
-                  assetEl.setAttribute("loop", "true");
-                  assetEl.setAttribute("muted", "true");
-                  assetEl.setAttribute("playsinline", "true");
-                  assetEl.setAttribute("crossorigin", "anonymous");
-                  assetEl.setAttribute("preload", "metadata");
-                  console.log(`🎬 Using video format for ${overlay.id}: ${finalUrl}`);
-                }
+                // Create video element
+                assetEl = document.createElement("video");
+                assetEl.src = `${finalUrl}?v=${cacheBuster}`;
+                assetEl.setAttribute("autoplay", "true");
+                assetEl.setAttribute("loop", "true");
+                assetEl.setAttribute("muted", "true");
+                assetEl.setAttribute("playsinline", "true");
+                assetEl.setAttribute("crossorigin", "anonymous");
+                assetEl.setAttribute("preload", "metadata");
                 // Performance optimizations to reduce jitter
                 assetEl.setAttribute("webkit-playsinline", "true");
                 assetEl.setAttribute("x-webkit-airplay", "allow");
@@ -580,75 +556,24 @@
               assetEl.id = assetId;
               assetsEl.appendChild(assetEl);
 
-              // Determine element type based on final chosen URL
-              const isAPNG = finalUrl.includes('.apng') || finalUrl.includes('_optimized.apng');
-              const isVideo = !isAPNG && (overlay.url.mp4 || overlay.url.webm);
-              
-              // Create AR element
-              const mediaEl = document.createElement(isVideo ? "a-video" : "a-image");
+              // Simple AR element creation - no complex fallbacks for debugging
+              const mediaEl = document.createElement(overlay.url.mp4 || overlay.url.webm ? "a-video" : "a-image");
               mediaEl.setAttribute("id", overlay.id);
               mediaEl.setAttribute("src", `#${assetId}`);
               mediaEl.setAttribute("position", overlay.position.join(" "));
               mediaEl.setAttribute("scale", overlay.scale.join(" "));
               mediaEl.setAttribute("geometry", "primitive: plane");
 
-              if (isVideo) {
-                console.log(`🎥 Creating video element for ${overlay.id} with ${finalUrl}`);
-                // Video-specific material setup with transparency
-                mediaEl.setAttribute(
-                  "material",
-                  `transparent: true; opacity: ${
-                    overlay.opacity || 1.0
-                  }; alphaTest: 0.1; shader: flat`
-                );
+              if (overlay.url.mp4 || overlay.url.webm) {
+                // Video element with basic transparency
+                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}; alphaTest: 0.1; shader: flat`);
                 mediaEl.setAttribute("autoplay", "true");
                 mediaEl.setAttribute("loop", "true");
-                
-                // iOS/iPhone detection for transparency handling
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                
-                // Enhanced transparency handling for different devices
-                if (isIOS) {
-                  // iOS with HEVC: Try native transparency first, fall back to minimal chroma key if needed
-                  const isHEVC = finalUrl.includes('_hevc.mov');
-                  if (isHEVC) {
-                    console.log(`🍎 iOS with HEVC: Using native transparency for ${overlay.id}`);
-                    // Set material properties for native HEVC alpha
-                    mediaEl.setAttribute(
-                      "material",
-                      `transparent: true; opacity: ${
-                        overlay.opacity || 1.0
-                      }; alphaTest: 0.01; shader: flat`
-                    );
-                  } else {
-                    // Fallback: Use refined chroma key for WebM on iOS
-                    mediaEl.setAttribute(
-                      "chroma-key",
-                      "color: #000000; threshold: 0.25; smoothing: 0.03"
-                    );
-                    console.log(`🍎 iOS fallback: Using refined chroma key for ${overlay.id}`);
-                  }
-                } else {
-                  // Non-iOS devices: use native WebM transparency
-                  console.log(`🌐 Non-iOS: Using native WebM transparency for ${overlay.id}`);
-                }
-              } else if (isAPNG) {
-                console.log(`🖼️ Creating APNG image element for ${overlay.id} with ${finalUrl}`);
-                // APNG-specific material setup with transparency
-                mediaEl.setAttribute(
-                  "material",
-                  `transparent: true; opacity: ${
-                    overlay.opacity || 1.0
-                  }; alphaTest: 0.1; shader: flat`
-                );
+                console.log(`� Creating video element for ${overlay.id}`);
               } else {
-                console.log(`🖼️ Creating static image element for ${overlay.id} with ${finalUrl}`);
-                // Regular image material setup
-                mediaEl.setAttribute(
-                  "material",
-                  `transparent: true; opacity: ${overlay.opacity || 1.0}`
-                );
+                // Image element
+                mediaEl.setAttribute("material", `transparent: true; opacity: ${overlay.opacity || 1.0}`);
+                console.log(`🖼️ Creating image element for ${overlay.id}`);
               }
 
               targetRoot.appendChild(mediaEl);
